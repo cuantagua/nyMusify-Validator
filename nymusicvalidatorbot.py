@@ -139,16 +139,28 @@ async def start_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    doc = update.message.document
-    user_id = update.effective_user.id
+    doc = None
+    name = "audio_sin_nombre.mp3"
+    mime_type = ""
 
-    if not doc.mime_type.startswith('audio/'):
-        await update.message.reply_text("❌ Solo se aceptan archivos de audio (WAV o MP3).")
+    if update.message.document:
+        doc = update.message.document
+        name = doc.file_name or "audio_documento.mp3"
+        mime_type = doc.mime_type or ""
+    elif update.message.audio:
+        doc = update.message.audio
+        name = doc.file_name or doc.title or "audio.mp3"
+        mime_type = doc.mime_type or ""
+
+    if not doc:
+        await update.message.reply_text("❌ No se recibió un archivo válido.")
         return ConversationHandler.END
 
-    name = doc.file_name
+    if not mime_type.startswith("audio/"):
+        # A veces los reenvíos no tienen MIME, así que damos una advertencia en vez de bloquear
+        await update.message.reply_text("⚠️ Archivo sin tipo MIME. Lo guardaré de todas formas.")
+    
     file_id = doc.file_id
-
     add_file(name, file_id)
     await update.message.reply_text(f"✅ Archivo '{name}' guardado con éxito.")
     return ConversationHandler.END
