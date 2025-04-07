@@ -6,7 +6,7 @@ from telegram.ext import (
 )
 import sqlite3
 
-UPLOAD, CREATE_COUPON, ASSIGN_FILE = range(2)
+UPLOAD, CREATE_COUPON, ASSIGN_FILE = range(3)
 ASSIGN_COUPON, SELECT_FILE = range(3, 5)
 
 ADMIN_IDS = [851194595]
