@@ -176,15 +176,6 @@ async def handle_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # Conversación para redimir cupón
-    redeem_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(menu_handler)],
-        states={
-            REDEEM: [MessageHandler(filters.TEXT & ~filters.COMMAND, redeem_coupon)]
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-        allow_reentry=True,
-    )
 
     admin_conv = ConversationHandler(
     entry_points=[
@@ -197,6 +188,18 @@ def main():
     },
     fallbacks=[CommandHandler("cancel", cancel)],
     )
+
+    # Conversación para redimir cupón
+    redeem_conv = ConversationHandler(
+        entry_points=[CallbackQueryHandler(menu_handler)],
+        states={
+            REDEEM: [MessageHandler(filters.TEXT & ~filters.COMMAND, redeem_coupon)]
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+        allow_reentry=True,
+    )
+
+
     
     app.add_handler(CommandHandler("start", start))
     app.add_handler(redeem_conv)
