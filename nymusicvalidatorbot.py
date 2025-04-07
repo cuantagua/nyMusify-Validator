@@ -195,7 +195,7 @@ def main():
         CallbackQueryHandler(start_create_coupon, pattern="^create_coupon$"),
     ],
     states={
-        UPLOAD: [MessageHandler(filters.Document.ALL, handle_file_upload)],
+        UPLOAD: [MessageHandler(filters.Document.ALL | filters.Audio.ALL, handle_file_upload)]
         CREATE_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_create_coupon)],
     },
     fallbacks=[CommandHandler("cancel", cancel)],
