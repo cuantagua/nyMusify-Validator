@@ -1,5 +1,5 @@
 def init_db():
-    conn = sqlite3.connect("bot_database.db")
+    conn = sqlite3.connect("bot_store.db")
     cursor = conn.cursor()
 
     # Tabla de archivos
