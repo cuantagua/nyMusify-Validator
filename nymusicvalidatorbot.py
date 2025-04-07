@@ -94,6 +94,7 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("📤 Subir nuevo archivo", callback_data='upload_file')],
         [InlineKeyboardButton("🎫 Crear nuevo cupón", callback_data='create_coupon')],
+        [InlineKeyboardButton("🔗 Asociar archivo a cupón", callback_data='assign_file')],  # nuevo botón
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
