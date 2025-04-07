@@ -125,6 +125,18 @@ async def admin_button_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     return ConversationHandler.END
 
+async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.message.reply_text("📤 Envía el archivo de audio (WAV o MP3):")
+    return UPLOAD
+
+async def start_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.message.reply_text("📝 Escribe el código del nuevo cupón (formato XXX-XXX):")
+    return CREATE_COUPON
+
 
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     doc = update.message.document
@@ -157,7 +169,7 @@ async def handle_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
     else:
         await update.message.reply_text("⚠️ Ese cupón ya existe. Prueba con otro código.")
         return CREATE_COUPON
-
+        
 
 
 # Iniciar la aplicación
@@ -175,14 +187,17 @@ def main():
     )
 
     admin_conv = ConversationHandler(
-    entry_points=[CallbackQueryHandler(admin_button_handler)],
+    entry_points=[
+        CallbackQueryHandler(start_upload, pattern="^upload_file$"),
+        CallbackQueryHandler(start_create_coupon, pattern="^create_coupon$"),
+    ],
     states={
         UPLOAD: [MessageHandler(filters.Document.ALL, handle_file_upload)],
         CREATE_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_create_coupon)],
     },
     fallbacks=[CommandHandler("cancel", cancel)],
     )
-
+    
     app.add_handler(CommandHandler("start", start))
     app.add_handler(redeem_conv)
     app.add_handler(admin_conv)
