@@ -127,7 +127,11 @@ async def admin_button_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except:
+        pass  # Si ya pasó el tiempo, simplemente ignóralo
+    
     await query.message.reply_text("📤 Envía el archivo de audio (WAV o MP3):")
     return UPLOAD
 
@@ -181,6 +185,14 @@ async def handle_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
     else:
         await update.message.reply_text("⚠️ Ese cupón ya existe. Prueba con otro código.")
         return CREATE_COUPON
+
+from telegram.error import TelegramError
+import logging
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logging.error(msg="Exception while handling an update:", exc_info=context.error)
+
+app.add_error_handler(error_handler)
         
 
 
@@ -219,6 +231,7 @@ def main():
     app.add_handler(CommandHandler("admin", admin_menu))
 
     print("🤖 Bot corriendo...")
+    
     app.run_polling()
 
 if __name__ == '__main__':
