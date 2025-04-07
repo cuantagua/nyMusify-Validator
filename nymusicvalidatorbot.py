@@ -191,7 +191,7 @@ def main():
 
     # Conversación para redimir cupón
     redeem_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(menu_handler)],
+        entry_points=[CallbackQueryHandler(menu_handler, pattern="^(redeem|my_files|help)$")],
         states={
             REDEEM: [MessageHandler(filters.TEXT & ~filters.COMMAND, redeem_coupon)]
         },
@@ -202,8 +202,8 @@ def main():
 
     
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(redeem_conv)
     app.add_handler(admin_conv)
+    app.add_handler(redeem_conv)
     app.add_handler(CommandHandler("admin", admin_menu))
 
     print("🤖 Bot corriendo...")
