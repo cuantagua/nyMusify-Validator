@@ -65,3 +65,10 @@ def add_coupon(code):
         return False
     finally:
         conn.close()
+
+def add_file(name, file_id):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("INSERT INTO files (name, file_id) VALUES (?, ?)", (name, file_id))
+    conn.commit()
+    conn.close()
