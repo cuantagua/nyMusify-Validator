@@ -6,7 +6,8 @@ from telegram.ext import (
 )
 import sqlite3
 
-UPLOAD, CREATE_COUPON, ASSIGN_FILE = range(3)
+UPLOAD, CREATE_COUPON, ASSIGN_FILE = range(2)
+ASSIGN_COUPON, SELECT_FILE = range(3, 5)
 
 ADMIN_IDS = [851194595]
 
@@ -121,8 +122,8 @@ async def admin_button_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         return CREATE_COUPON
 
     elif query.data == 'assign_file':
-        await query.message.reply_text("📎 Esta función estará disponible pronto.")
-        return ConversationHandler.END
+        await query.message.reply_text("✍️ Escribe el código del cupón al que deseas asociar un archivo:")
+        return ASSIGN_COUPON
 
     return ConversationHandler.END
 
@@ -187,6 +188,52 @@ async def handle_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.message.reply_text("⚠️ Ese cupón ya existe. Prueba con otro código.")
         return CREATE_COUPON
 
+async def receive_coupon_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    code = update.message.text.strip().upper()
+    context.user_data['coupon_to_assign'] = code
+
+    # Aquí puedes listar archivos disponibles si quieres
+    await update.message.reply_text("📎 Ahora reenvíame el archivo que deseas asociar a este cupón.")
+    return SELECT_FILE
+
+from db_functions import associate_file_with_coupon  # esta función la hacemos en un momento
+
+async def assign_file_to_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    file = None
+    if update.message.document:
+        file = update.message.document
+    elif update.message.audio:
+        file = update.message.audio
+    
+    if not file:
+        await update.message.reply_text("❌ No se detectó un archivo válido.")
+        return ConversationHandler.END
+
+    coupon = context.user_data.get('coupon_to_assign')
+    if not coupon:
+        await update.message.reply_text("⚠️ No se encontró el cupón en contexto.")
+        return ConversationHandler.END
+
+    file_id = file.file_id
+    name = file.file_name or "sin_nombre"
+    
+    # Aquí buscamos el ID real en base de datos por file_id
+    conn = sqlite3.connect(DB)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM files WHERE telegram_file_id = ?", (file_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        await update.message.reply_text("⚠️ El archivo no está registrado aún. Súbelo primero.")
+        return ConversationHandler.END
+
+    file_db_id = row[0]
+    associate_file_with_coupon(coupon, file_db_id)
+
+    await update.message.reply_text(f"✅ Archivo asociado exitosamente al cupón {coupon}.")
+    return ConversationHandler.END
+
 # Iniciar la aplicación
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
@@ -196,13 +243,16 @@ def main():
     entry_points=[
         CallbackQueryHandler(start_upload, pattern="^upload_file$"),
         CallbackQueryHandler(start_create_coupon, pattern="^create_coupon$"),
+        CallbackQueryHandler(admin_button_handler, pattern="^assign_file$"),
     ],
     states={
-        UPLOAD: [MessageHandler(filters.Document.AUDIO | filters.AUDIO, handle_file_upload)],
+        UPLOAD: [MessageHandler(filters.Document.ALL | filters.Audio.ALL, handle_file_upload)],
         CREATE_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_create_coupon)],
+        ASSIGN_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_coupon_code)],
+        SELECT_FILE: [MessageHandler(filters.Document.ALL | filters.Audio.ALL, assign_file_to_coupon)],
     },
     fallbacks=[CommandHandler("cancel", cancel)],
-    )
+)
 
     # Conversación para redimir cupón
     redeem_conv = ConversationHandler(
