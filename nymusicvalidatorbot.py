@@ -82,19 +82,18 @@ from database import init_db
 init_db()
 
 #Menu de admin
-def admin_menu(update: Update, context: CallbackContext):
+async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id not in ADMIN_IDS:
-        update.message.reply_text("🚫 No tienes permisos para acceder a este menú.")
+        await update.message.reply_text("🚫 No tienes permisos para acceder a este menú.")
         return
 
     keyboard = [
         [InlineKeyboardButton("📤 Subir nuevo archivo", callback_data='upload_file')],
         [InlineKeyboardButton("🎫 Crear nuevo cupón", callback_data='create_coupon')],
-        [InlineKeyboardButton("📎 Asignar archivo a cupón", callback_data='assign_file')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
+    await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
 
 
 # Iniciar la aplicación
