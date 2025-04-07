@@ -253,7 +253,6 @@ def main():
     },
     fallbacks=[CommandHandler("cancel", cancel)],
 )
-
     # Conversación para redimir cupón
     redeem_conv = ConversationHandler(
         entry_points=[CallbackQueryHandler(menu_handler, pattern="^(redeem|my_files|help)$")],
