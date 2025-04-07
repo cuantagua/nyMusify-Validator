@@ -1,4 +1,4 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ContextTypes
 from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackContext,
