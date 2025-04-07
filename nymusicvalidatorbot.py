@@ -10,6 +10,8 @@ UPLOAD, CREATE_COUPON, ASSIGN_FILE = range(3)
 
 ADMIN_IDS = [851194595]
 
+DB = "bot_database.db"
+
 TOKEN = '7987679597:AAHK4k-8kzUmDBfC9_R1cVroDqXEDqz6sB4'
 
 # Estados de conversación
@@ -95,43 +97,7 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
-
-
-# Iniciar la aplicación
-def main():
-    app = ApplicationBuilder().token(TOKEN).build()
-
-    # Conversación para redimir cupón
-    redeem_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(menu_handler)],
-        states={
-            REDEEM: [MessageHandler(filters.TEXT & ~filters.COMMAND, redeem_coupon)]
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-        allow_reentry=True,
-    )
-
-    admin_conv = ConversationHandler(
-    entry_points=[CallbackQueryHandler(admin_button_handler)],
-    states={
-        UPLOAD: [MessageHandler(filters.Document.ALL, handle_file_upload)],
-        CREATE_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_create_coupon)],
-    },
-    fallbacks=[],
-    )
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(redeem_conv)
-    app.add_handler(admin_conv)
-    app.add_handler(CommandHandler("admin", admin_menu))
-
-    print("🤖 Bot corriendo...")
-    app.run_polling()
-
-if __name__ == '__main__':
-    main()
-
-
+    
 from db_functions import add_file  # Función que ahora veremos
 
 # Estados
@@ -203,4 +169,41 @@ async def handle_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
     else:
         await update.message.reply_text("⚠️ Ese cupón ya existe. Prueba con otro código.")
         return CREATE_COUPON
+
+
+
+# Iniciar la aplicación
+def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+
+    # Conversación para redimir cupón
+    redeem_conv = ConversationHandler(
+        entry_points=[CallbackQueryHandler(menu_handler)],
+        states={
+            REDEEM: [MessageHandler(filters.TEXT & ~filters.COMMAND, redeem_coupon)]
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+        allow_reentry=True,
+    )
+
+    admin_conv = ConversationHandler(
+    entry_points=[CallbackQueryHandler(admin_button_handler)],
+    states={
+        UPLOAD: [MessageHandler(filters.Document.ALL, handle_file_upload)],
+        CREATE_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_create_coupon)],
+    },
+    fallbacks=[],
+    )
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(redeem_conv)
+    app.add_handler(admin_conv)
+    app.add_handler(CommandHandler("admin", admin_menu))
+
+    print("🤖 Bot corriendo...")
+    app.run_polling()
+
+if __name__ == '__main__':
+    main()
+
 
