@@ -246,7 +246,7 @@ def main():
         CallbackQueryHandler(admin_button_handler, pattern="^assign_file$"),
     ],
     states={
-        UPLOAD: [MessageHandler(filters.Document.ALL | filters.Audio.ALL, handle_file_upload)],
+        UPLOAD: [MessageHandler(filters.DOCUMENT | filters.AUDIO, handle_file_upload)],
         CREATE_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_create_coupon)],
         ASSIGN_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_coupon_code)],
         SELECT_FILE: [MessageHandler(filters.Document.ALL | filters.Audio.ALL, assign_file_to_coupon)],
