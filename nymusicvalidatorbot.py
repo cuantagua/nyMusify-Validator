@@ -30,7 +30,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Manejo de botones del menú
 async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    query.answer()
+    await query.answer()
 
     if query.data == 'redeem':
         await query.message.reply_text("🔑 Ingresa el código de cupón:")
@@ -104,7 +104,7 @@ from db_functions import add_file  # Función que ahora veremos
 
 async def admin_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    query.answer()
+    await query.answer()
 
     user_id = query.from_user.id
     if user_id not in ADMIN_IDS:
