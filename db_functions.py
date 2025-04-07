@@ -72,3 +72,10 @@ def add_file(name, file_id):
     c.execute("INSERT INTO files (name, file_id) VALUES (?, ?)", (name, file_id))
     conn.commit()
     conn.close()
+
+def associate_file_with_coupon(coupon: str, file_id: int):
+    conn = sqlite3.connect("bot_database.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO coupon_files (coupon, file_id) VALUES (?, ?)", (coupon, file_id))
+    conn.commit()
+    conn.close()
