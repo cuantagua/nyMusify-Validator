@@ -1,8 +1,8 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackContext,
-    CallbackQueryHandler, MessageHandler, filters, ConversationHandler
+    CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
 )
 
 UPLOAD, CREATE_COUPON, ASSIGN_FILE = range(3)
