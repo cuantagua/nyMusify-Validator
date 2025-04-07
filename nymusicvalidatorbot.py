@@ -1,5 +1,5 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id
+from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackContext,
     CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
@@ -33,14 +33,14 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query.answer()
 
     if query.data == 'redeem':
-        query.message.reply_text("🔑 Ingresa el código de cupón:")
+        await query.message.reply_text("🔑 Ingresa el código de cupón:")
         return REDEEM
 
     elif query.data == 'my_files':
-        query.message.reply_text("📁 Aquí verás tus archivos redimidos. (Función en desarrollo)")
+        await query.message.reply_text("📁 Aquí verás tus archivos redimidos. (Función en desarrollo)")
 
     elif query.data == 'help':
-        query.message.reply_text(
+        await query.message.reply_text(
             "ℹ️ Puedes usar un cupón para acceder a tus archivos de audio.\n"
             "Presiona 'Redimir cupón' para comenzar."
         )
@@ -108,19 +108,19 @@ async def admin_button_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     user_id = query.from_user.id
     if user_id not in ADMIN_IDS:
-        query.message.reply_text("🚫 No autorizado.")
+        await query.message.reply_text("🚫 No autorizado.")
         return ConversationHandler.END
 
     if query.data == 'upload_file':
-        query.message.reply_text("📤 Envía el archivo de audio (WAV o MP3):")
+        await query.message.reply_text("📤 Envía el archivo de audio (WAV o MP3):")
         return UPLOAD
 
     elif query.data == 'create_coupon':
-        query.message.reply_text("📝 Escribe el código del nuevo cupón (formato XXX-XXX):")
+        await query.message.reply_text("📝 Escribe el código del nuevo cupón (formato XXX-XXX):")
         return CREATE_COUPON
 
     elif query.data == 'assign_file':
-        query.message.reply_text("📎 Esta función estará disponible pronto.")
+        await query.message.reply_text("📎 Esta función estará disponible pronto.")
         return ConversationHandler.END
 
     return ConversationHandler.END
@@ -140,18 +140,6 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
     add_file(name, file_id)
     await update.message.reply_text(f"✅ Archivo '{name}' guardado con éxito.")
     return ConversationHandler.END
-
-
-def add_file(name, file_id):
-    conn = sqlite3.connect(DB)
-    c = conn.cursor()
-    c.execute("INSERT INTO files (name, file_id) VALUES (?, ?)", (name, file_id))
-    conn.commit()
-    conn.close()
-
-
-
-from db_functions import add_coupon
 
 async def handle_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
     code = update.message.text.strip().upper()
@@ -192,7 +180,7 @@ def main():
         UPLOAD: [MessageHandler(filters.Document.ALL, handle_file_upload)],
         CREATE_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_create_coupon)],
     },
-    fallbacks=[],
+    fallbacks=[CommandHandler("cancel", cancel)],
     )
 
     app.add_handler(CommandHandler("start", start))
