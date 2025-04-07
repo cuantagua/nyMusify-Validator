@@ -249,7 +249,7 @@ def main():
         UPLOAD: [MessageHandler(filters.DOCUMENT | filters.AUDIO, handle_file_upload)],
         CREATE_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_create_coupon)],
         ASSIGN_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_coupon_code)],
-        SELECT_FILE: [MessageHandler(filters.Document.ALL | filters.Audio.ALL, assign_file_to_coupon)],
+        SELECT_FILE: [MessageHandler(filters.DOCUMENT | filters.AUDIO, assign_file_to_coupon)],
     },
     fallbacks=[CommandHandler("cancel", cancel)],
 )
