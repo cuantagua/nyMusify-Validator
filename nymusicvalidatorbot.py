@@ -264,31 +264,42 @@ async def show_redeemed_files(update, context, order_by="recent", page=0):
     message = update.message or update.callback_query.message
 
     if not files:
-        await message.reply_text("📭 No has redimido ningún archivo todavía.")
+        await message.reply_text("No has redimido ningún archivo todavía.")
         return
 
-    # Crear botones individuales por archivo
+    # Texto base (sin mostrar el file_id)
+    text = f"📦 Archivos redimidos ({total} total):\n\n"
     keyboard = []
-    for name, file_id, timestamp in files:
+
+    for index, (name, file_id, timestamp) in enumerate(files):
+        short_id = f"{page}_{index}"
+        context.user_data[f"file_{short_id}"] = file_id
+
+        # Agrega nombre del archivo al texto
+        text += f"• {name} (📅 {timestamp})\n"
+
+        # Botón para descargar
         keyboard.append([
-            InlineKeyboardButton(f"📄 {name}", callback_data=f"getfile_{file_id}")
+            InlineKeyboardButton(f"📥 Descargar: {name}", callback_data=f"getfile_{short_id}")
         ])
 
-    # Botones de navegación y orden
-    nav_buttons = [
+    # Paginación
+    pagination = [
         InlineKeyboardButton("⬅️ Anterior", callback_data=f"view_{order_by}_{page-1}") if page > 0 else InlineKeyboardButton(" ", callback_data="noop"),
         InlineKeyboardButton("➡️ Siguiente", callback_data=f"view_{order_by}_{page+1}") if (offset + limit) < total else InlineKeyboardButton(" ", callback_data="noop"),
     ]
-    sort_buttons = [
+    keyboard.append(pagination)
+
+    # Filtros
+    keyboard.append([
         InlineKeyboardButton("🔄 Recientes", callback_data="view_recent_0"),
         InlineKeyboardButton("🔤 Por nombre", callback_data="view_name_0"),
-    ]
-    keyboard.append(nav_buttons)
-    keyboard.append(sort_buttons)
+    ])
 
     await message.reply_text(
-        f"📦 Archivos redimidos ({total} total):\nSelecciona un archivo para descargarlo:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        text,
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="Markdown"
     )
 
 async def handle_view_files_callback(update, context):
@@ -316,7 +327,7 @@ async def handle_file_request(update: Update, context: ContextTypes.DEFAULT_TYPE
             try:
                 await query.message.chat.send_document(file_id)
             except Exception as e:
-                await query.message.reply_text("⚠️ No se pudo enviar el archivo.")
+                await query.message.reply_text(f"⚠️ No se pudo enviar el archivo.")
         else:
             await query.message.reply_text("❌ Archivo no encontrado.")
 
