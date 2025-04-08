@@ -264,31 +264,32 @@ async def show_redeemed_files(update, context, order_by="recent", page=0):
     message = update.message or update.callback_query.message
 
     if not files:
-        await message.reply_text("No has redimido ningún archivo todavía.")
+        await message.reply_text("📭 No has redimido ningún archivo todavía.")
         return
 
-    text = f"📦 Archivos redimidos ({total} total):\n\n"
+    # Crear botones individuales por archivo
+    keyboard = []
     for name, file_id, timestamp in files:
-        text += f"• {name} (📅 {timestamp})\n"
-        # Enviar el archivo directamente
-        try:
-            await message.chat.send_document(file_id, caption=name)
-        except Exception as e:
-            await message.reply_text(f"⚠️ No se pudo enviar {name}: {e}")
+        keyboard.append([
+            InlineKeyboardButton(f"📄 {name}", callback_data=f"getfile_{file_id}")
+        ])
 
-    # Botones
-    keyboard = [
-        [
-            InlineKeyboardButton("⬅️ Anterior", callback_data=f"view_{order_by}_{page-1}") if page > 0 else InlineKeyboardButton(" ", callback_data="noop"),
-            InlineKeyboardButton("➡️ Siguiente", callback_data=f"view_{order_by}_{page+1}") if (offset + limit) < total else InlineKeyboardButton(" ", callback_data="noop"),
-        ],
-        [
-            InlineKeyboardButton("🔄 Recientes", callback_data="view_recent_0"),
-            InlineKeyboardButton("🔤 Por nombre", callback_data="view_name_0"),
-        ]
+    # Botones de navegación y orden
+    nav_buttons = [
+        InlineKeyboardButton("⬅️ Anterior", callback_data=f"view_{order_by}_{page-1}") if page > 0 else InlineKeyboardButton(" ", callback_data="noop"),
+        InlineKeyboardButton("➡️ Siguiente", callback_data=f"view_{order_by}_{page+1}") if (offset + limit) < total else InlineKeyboardButton(" ", callback_data="noop"),
     ]
+    sort_buttons = [
+        InlineKeyboardButton("🔄 Recientes", callback_data="view_recent_0"),
+        InlineKeyboardButton("🔤 Por nombre", callback_data="view_name_0"),
+    ]
+    keyboard.append(nav_buttons)
+    keyboard.append(sort_buttons)
 
-    await message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+    await message.reply_text(
+        f"📦 Archivos redimidos ({total} total):\nSelecciona un archivo para descargarlo:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
 async def handle_view_files_callback(update, context):
     query = update.callback_query
@@ -302,6 +303,17 @@ async def handle_view_files_callback(update, context):
             await show_redeemed_files(update, context, order_by=order_by, page=page)
         except Exception as e:
             await query.edit_message_text("⚠️ Error procesando tu solicitud.")
+
+async def handle_file_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data.startswith("getfile_"):
+        file_id = query.data.split("getfile_")[1]
+        try:
+            await query.message.chat.send_document(file_id)
+        except Exception as e:
+            await query.message.reply_text("⚠️ No se pudo enviar el archivo.")
 
 # Iniciar la aplicación
 def main():
@@ -347,6 +359,8 @@ def main():
     app.add_handler(CommandHandler("admin", admin_menu))
     app.add_handler(CallbackQueryHandler(handle_view_files_callback, pattern=r"^view_"))
     app.add_handler(CommandHandler("mis_archivos", show_redeemed_files))
+    app.add_handler(CallbackQueryHandler(handle_file_request, pattern=r"^getfile_"))
+
 
 
     print("🤖 Bot corriendo...")
