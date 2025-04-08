@@ -269,7 +269,12 @@ async def show_redeemed_files(update, context, order_by="recent", page=0):
 
     text = f"📦 Archivos redimidos ({total} total):\n\n"
     for name, file_id, timestamp in files:
-        text += f"• {name} (📥 ID: `{file_id}`)\n  └ 📅 Redimido: {timestamp}\n\n"
+        text += f"• {name} (📅 {timestamp})\n"
+        # Enviar el archivo directamente
+        try:
+            await message.chat.send_document(file_id, caption=name)
+        except Exception as e:
+            await message.reply_text(f"⚠️ No se pudo enviar {name}: {e}")
 
     # Botones
     keyboard = [
@@ -284,6 +289,7 @@ async def show_redeemed_files(update, context, order_by="recent", page=0):
     ]
 
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+
 async def handle_view_files_callback(update, context):
     query = update.callback_query
     await query.answer()  # Importante para evitar el "relojito" de Telegram
