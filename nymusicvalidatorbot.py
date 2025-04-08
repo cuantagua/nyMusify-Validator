@@ -267,28 +267,22 @@ async def show_redeemed_files(update, context, order_by="recent", page=0):
         await message.reply_text("No has redimido ningún archivo todavía.")
         return
 
-    # Texto base (sin mostrar el file_id)
-    text = f"📦 Archivos redimidos ({total} total):\n\n"
     keyboard = []
 
-    for index, (name, file_id, timestamp) in enumerate(files):
+    for index, (name, file_id, _) in enumerate(files):
         short_id = f"{page}_{index}"
         context.user_data[f"file_{short_id}"] = file_id
 
-        # Agrega nombre del archivo al texto
-        text += f"• {name} (📅 {timestamp})\n"
-
-        # Botón para descargar
         keyboard.append([
-            InlineKeyboardButton(f"📥 Descargar: {name}", callback_data=f"getfile_{short_id}")
+            InlineKeyboardButton(f"📥 {name}", callback_data=f"getfile_{short_id}")
         ])
 
-    # Paginación
-    pagination = [
+    # Navegación
+    navigation = [
         InlineKeyboardButton("⬅️ Anterior", callback_data=f"view_{order_by}_{page-1}") if page > 0 else InlineKeyboardButton(" ", callback_data="noop"),
         InlineKeyboardButton("➡️ Siguiente", callback_data=f"view_{order_by}_{page+1}") if (offset + limit) < total else InlineKeyboardButton(" ", callback_data="noop"),
     ]
-    keyboard.append(pagination)
+    keyboard.append(navigation)
 
     # Filtros
     keyboard.append([
@@ -297,11 +291,9 @@ async def show_redeemed_files(update, context, order_by="recent", page=0):
     ])
 
     await message.reply_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        parse_mode="Markdown"
+        "📦 Archivos redimidos:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
-
 async def handle_view_files_callback(update, context):
     query = update.callback_query
     await query.answer()  # Importante para evitar el "relojito" de Telegram
@@ -327,7 +319,7 @@ async def handle_file_request(update: Update, context: ContextTypes.DEFAULT_TYPE
             try:
                 await query.message.chat.send_document(file_id)
             except Exception as e:
-                await query.message.reply_text(f"⚠️ No se pudo enviar el archivo.")
+                await query.message.reply_text("⚠️ No se pudo enviar el archivo.")
         else:
             await query.message.reply_text("❌ Archivo no encontrado.")
 
