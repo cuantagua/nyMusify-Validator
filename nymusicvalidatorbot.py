@@ -262,7 +262,8 @@ async def show_redeemed_files(update, context, order_by="recent", page=0):
     total_pages = (total + limit - 1) // limit
 
     if not files:
-        await update.message.reply_text("No has redimido ningún archivo todavía.")
+            message = update.message or update.callback_query.message
+            await message.reply_text("No has redimido ningún archivo todavía.")
         return
 
     text = f"📦 Archivos redimidos ({total} total):\n\n"
