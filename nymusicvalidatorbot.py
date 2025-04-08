@@ -252,6 +252,54 @@ async def assign_file_to_coupon(update: Update, context: ContextTypes.DEFAULT_TY
     await update.message.reply_text(f"✅ Archivo asociado exitosamente al cupón {coupon}.")
     return ConversationHandler.END
 
+async def show_redeemed_files(update, context, order_by="recent", page=0):
+    user_id = update.effective_user.id
+    limit = 5
+    offset = page * limit
+
+    files, total = get_redeemed_files_by_user(user_id, order_by, limit, offset)
+    total_pages = (total + limit - 1) // limit
+
+    if not files:
+        await update.message.reply_text("No has redimido ningún archivo todavía.")
+        return
+
+    text = f"📦 Archivos redimidos ({total} total):\n\n"
+    for name, file_id, timestamp in files:
+        text += f"• {name} (📥 ID: `{file_id}`)\n  └ 📅 Redimido: {timestamp}\n\n"
+
+    # Botones
+    keyboard = [
+        [
+            InlineKeyboardButton("⬅️ Anterior", callback_data=f"view_{order_by}_{page-1}") if page > 0 else InlineKeyboardButton(" ", callback_data="noop"),
+            InlineKeyboardButton("➡️ Siguiente", callback_data=f"view_{order_by}_{page+1}") if (offset + limit) < total else InlineKeyboardButton(" ", callback_data="noop"),
+        ],
+        [
+            InlineKeyboardButton("🔄 Recientes", callback_data="view_recent_0"),
+            InlineKeyboardButton("🔤 Por nombre", callback_data="view_name_0"),
+        ]
+    ]
+
+    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+
+async def handle_view_files_callback(update, context):
+    query = update.callback_query
+    await query.answer()  # Importante para evitar el "relojito" de Telegram
+
+    data = query.data
+    if data.startswith("view_"):
+        try:
+            _, order_by, page = data.split("_")
+            page = int(page)
+            await show_redeemed_files(update, context, order_by=order_by, page=page)
+        except Exception as e:
+            await query.edit_message_text("⚠️ Error procesando tu solicitud.")
+
+async def command_mis_archivos(update, context):
+    await show_redeemed_files(update, context, order_by="recent", page=0)
+
+application.add_handler(CommandHandler("mis_archivos", command_mis_archivos))
+
 # Iniciar la aplicación
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
@@ -294,6 +342,7 @@ def main():
     app.add_handler(admin_conv)
     app.add_handler(redeem_conv)
     app.add_handler(CommandHandler("admin", admin_menu))
+    app.add_handler(CallbackQueryHandler(handle_view_files_callback, pattern=r"^view_"))
 
     print("🤖 Bot corriendo...")
     
