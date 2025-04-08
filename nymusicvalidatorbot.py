@@ -49,8 +49,8 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return REDEEM
 
     elif query.data == 'my_files':
-    await show_redeemed_files(update, context)
-    return ConversationHandler.END
+        await show_redeemed_files(update, context)
+        return ConversationHandler.END
 
     elif query.data == 'help':
         await query.message.reply_text(
