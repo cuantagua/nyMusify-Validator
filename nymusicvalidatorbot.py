@@ -309,11 +309,16 @@ async def handle_file_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     await query.answer()
 
     if query.data.startswith("getfile_"):
-        file_id = query.data.split("getfile_")[1]
-        try:
-            await query.message.chat.send_document(file_id)
-        except Exception as e:
-            await query.message.reply_text("⚠️ No se pudo enviar el archivo.")
+        short_id = query.data.split("getfile_")[1]
+        file_id = context.user_data.get(f"file_{short_id}")
+
+        if file_id:
+            try:
+                await query.message.chat.send_document(file_id)
+            except Exception as e:
+                await query.message.reply_text("⚠️ No se pudo enviar el archivo.")
+        else:
+            await query.message.reply_text("❌ Archivo no encontrado.")
 
 # Iniciar la aplicación
 def main():
