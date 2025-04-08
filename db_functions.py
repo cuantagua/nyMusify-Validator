@@ -124,7 +124,7 @@ def get_redeemed_files_by_user(user_id, order_by="recent", limit=5, offset=0):
         SELECT f.name, f.telegram_file_id, r.timestamp
         FROM redemptions r
         JOIN coupons c ON r.coupon_code = c.code
-        JOIN coupon_files cf ON c.id = cf.coupon_id
+        JOIN coupon_files cf ON c.code = cf.coupon_code
         JOIN files f ON cf.file_id = f.id
         WHERE r.user_id = ?
         GROUP BY f.id
