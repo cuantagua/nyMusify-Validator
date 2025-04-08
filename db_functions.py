@@ -1,4 +1,8 @@
 import sqlite3
+import random
+import string
+import csv
+import os
 
 DB_NAME = "bot_store.db"  # <- Usa una sola base para todo
 
@@ -147,3 +151,35 @@ def get_redeemed_files_by_user(user_id, order_by="recent", limit=5, offset=0):
 
     conn.close()
     return files, total
+
+def generate_code():
+    return f"{''.join(random.choices(string.ascii_uppercase + string.digits, k=3))}-" \
+           f"{''.join(random.choices(string.ascii_uppercase + string.digits, k=3))}"
+
+def generate_coupons_csv(file_name, cantidad):
+    conn = sqlite3.connect("bot_store.db")
+    cursor = conn.cursor()
+
+    # Obtener ID del archivo
+    cursor.execute("SELECT id FROM files WHERE name = ?", (file_name,))
+    file_id = cursor.fetchone()[0]
+
+    codes = []
+    for _ in range(cantidad):
+        code = generate_code()
+        cursor.execute("INSERT OR IGNORE INTO coupons (code) VALUES (?)", (code,))
+        conn.commit()
+        cursor.execute("INSERT INTO coupon_files (coupon_code, file_id) VALUES (?, ?)", (code, file_id))
+        conn.commit()
+        codes.append(code)
+
+    # Crear CSV temporal
+    csv_path = f"/tmp/coupons_{file_name.replace(' ', '_')}.csv"
+    with open(csv_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Código'])
+        for c in codes:
+            writer.writerow([c])
+
+    conn.close()
+    return csv_path
