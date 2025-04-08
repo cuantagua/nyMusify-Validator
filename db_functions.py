@@ -1,42 +1,43 @@
 import sqlite3
 
 def init_db():
-    conn = sqlite3.connect("bot_store.db")
+    conn = sqlite3.connect("bot_database.db")
     cursor = conn.cursor()
 
     # Tabla de archivos
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS files (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        telegram_file_id TEXT NOT NULL UNIQUE
-    )
+        CREATE TABLE IF NOT EXISTS files (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            telegram_file_id TEXT UNIQUE
+        )
     """)
 
     # Tabla de cupones
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS coupons (
-        code TEXT PRIMARY KEY
-    )
+        CREATE TABLE IF NOT EXISTS coupons (
+            code TEXT PRIMARY KEY
+        )
     """)
 
-    # Asociación entre cupones y archivos
+    # Tabla para asignar archivos a cupones
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS coupon_files (
-        coupon_code TEXT,
-        file_id INTEGER,
-        FOREIGN KEY (coupon_code) REFERENCES coupons(code),
-        FOREIGN KEY (file_id) REFERENCES files(id)
-    )
+        CREATE TABLE IF NOT EXISTS coupon_files (
+            coupon_code TEXT,
+            file_id INTEGER,
+            FOREIGN KEY(coupon_code) REFERENCES coupons(code),
+            FOREIGN KEY(file_id) REFERENCES files(id),
+            UNIQUE(coupon_code, file_id)
+        )
     """)
 
-    # Redenciones
+    # Redenciones (quién usó qué cupón)
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS redemptions (
-        user_id INTEGER,
-        coupon_code TEXT,
-        FOREIGN KEY (coupon_code) REFERENCES coupons(code)
-    )
+        CREATE TABLE IF NOT EXISTS redemptions (
+            user_id INTEGER,
+            coupon_code TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
     """)
 
     conn.commit()
