@@ -261,10 +261,11 @@ async def show_redeemed_files(update, context, order_by="recent", page=0):
     files, total = get_redeemed_files_by_user(user_id, order_by, limit, offset)
     total_pages = (total + limit - 1) // limit
 
+    message = update.message or update.callback_query.message
+
     if not files:
-            message = update.message or update.callback_query.message
-            await message.reply_text("No has redimido ningún archivo todavía.")
-            return
+        await message.reply_text("No has redimido ningún archivo todavía.")
+        return
 
     text = f"📦 Archivos redimidos ({total} total):\n\n"
     for name, file_id, timestamp in files:
@@ -282,8 +283,7 @@ async def show_redeemed_files(update, context, order_by="recent", page=0):
         ]
     ]
 
-    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
-
+    await message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
 async def handle_view_files_callback(update, context):
     query = update.callback_query
     await query.answer()  # Importante para evitar el "relojito" de Telegram
