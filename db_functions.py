@@ -111,3 +111,36 @@ def associate_file_with_coupon(coupon_code, file_id):
     )
     conn.commit()
     conn.close()
+
+def get_redeemed_files_by_user(user_id, order_by="recent", limit=10, offset=0):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    order_clause = "r.timestamp DESC" if order_by == "recent" else "f.name ASC"
+
+    query = """
+        SELECT f.name, f.telegram_file_id, r.timestamp
+        FROM redemptions r
+        JOIN coupon_files cf ON r.coupon_code = cf.coupon_code
+        JOIN files f ON cf.file_id = f.id
+        WHERE r.user_id = ?
+        GROUP BY f.id
+        ORDER BY {}
+        LIMIT ? OFFSET ?
+    """.format(order_clause)
+
+    cursor.execute(query, (user_id, limit, offset))
+    results = cursor.fetchall()
+
+    # Contar total para paginación
+    cursor.execute("""
+        SELECT COUNT(DISTINCT f.id)
+        FROM redemptions r
+        JOIN coupon_files cf ON r.coupon_code = cf.coupon_code
+        JOIN files f ON cf.file_id = f.id
+        WHERE r.user_id = ?
+    """, (user_id,))
+    total = cursor.fetchone()[0]
+
+    conn.close()
+    return results, total
