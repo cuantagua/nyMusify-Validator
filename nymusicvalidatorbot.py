@@ -1,5 +1,5 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db
+from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackContext,
     CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
