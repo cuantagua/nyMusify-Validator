@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackContext,
-    CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
+    CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler, ReplyKeyboardMarkup, KeyboardButton
 )
 
 import sqlite3
@@ -18,6 +18,12 @@ TOKEN = '7987679597:AAHK4k-8kzUmDBfC9_R1cVroDqXEDqz6sB4'
 
 # Estados de conversación
 REDEEM = 1
+
+cancel_keyboard = ReplyKeyboardMarkup(
+    [[KeyboardButton("❌ Cancelar")]],
+    resize_keyboard=True,
+    one_time_keyboard=True
+)
 
 # Menú principal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -35,7 +41,10 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     if query.data == 'redeem':
-        await query.message.reply_text("🔑 Ingresa el código de cupón:")
+        await update.callback_query.message.reply_text(
+            "🔑 Ingresa el código de cupón:",
+            reply_markup=cancel_keyboard
+        )
         return REDEEM
 
     elif query.data == 'my_files':
@@ -79,7 +88,14 @@ async def redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Cancelar conversación
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("❌ Operación cancelada.")
+    keyboard = [
+        [InlineKeyboardButton("🧾 Redimir cupón", callback_data='redeem')],
+        [InlineKeyboardButton("🎵 Mis archivos", callback_data='my_files')],
+        [InlineKeyboardButton("ℹ️ Ayuda", callback_data='help')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
     return ConversationHandler.END
 
 from database import init_db
@@ -255,15 +271,20 @@ def main():
 
     },
     fallbacks=[CommandHandler("cancel", cancel)],
-)
+    )
     # Conversación para redimir cupón
     redeem_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(menu_handler, pattern="^(redeem|my_files|help)$")],
-        states={
-            REDEEM: [MessageHandler(filters.TEXT & ~filters.COMMAND, redeem_coupon)]
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-        allow_reentry=True,
+    entry_points=[CallbackQueryHandler(menu_handler, pattern="^(redeem|my_files|help)$")],
+    states={
+        REDEEM: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.Regex("^❌ Cancelar$"), redeem_coupon),
+            MessageHandler(filters.Regex("^❌ Cancelar$"), cancel)
+        ]
+    },
+    fallbacks=[
+        CommandHandler("cancel", cancel)
+    ],
+    allow_reentry=True,
     )
 
 
