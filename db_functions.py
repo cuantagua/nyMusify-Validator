@@ -53,8 +53,17 @@ def init_db():
 # Otras funciones:
 
 def add_file(name, telegram_file_id):
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect("bot_store.db")
     cursor = conn.cursor()
+
+    # Verificar si ya existe ese telegram_file_id
+    cursor.execute("SELECT id FROM files WHERE telegram_file_id = ?", (telegram_file_id,))
+    exists = cursor.fetchone()
+
+    if exists:
+        conn.close()
+        raise ValueError("El archivo ya existe en la base de datos.")
+
     cursor.execute("INSERT INTO files (name, telegram_file_id) VALUES (?, ?)", (name, telegram_file_id))
     conn.commit()
     conn.close()
