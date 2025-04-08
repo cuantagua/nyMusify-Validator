@@ -264,7 +264,7 @@ async def show_redeemed_files(update, context, order_by="recent", page=0):
     if not files:
             message = update.message or update.callback_query.message
             await message.reply_text("No has redimido ningún archivo todavía.")
-        return
+            return
 
     text = f"📦 Archivos redimidos ({total} total):\n\n"
     for name, file_id, timestamp in files:
