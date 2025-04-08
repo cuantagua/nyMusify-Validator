@@ -295,9 +295,6 @@ async def handle_view_files_callback(update, context):
         except Exception as e:
             await query.edit_message_text("⚠️ Error procesando tu solicitud.")
 
-async def command_mis_archivos(update, context):
-    await show_redeemed_files(update, context, order_by="recent", page=0)
-
 # Iniciar la aplicación
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
@@ -341,7 +338,7 @@ def main():
     app.add_handler(redeem_conv)
     app.add_handler(CommandHandler("admin", admin_menu))
     app.add_handler(CallbackQueryHandler(handle_view_files_callback, pattern=r"^view_"))
-    app.add_handler(CommandHandler("mis_archivos", command_mis_archivos))
+    app.add_handler(CommandHandler("mis_archivos", show_redeemed_files))
 
 
     print("🤖 Bot corriendo...")
