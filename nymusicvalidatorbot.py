@@ -298,8 +298,6 @@ async def handle_view_files_callback(update, context):
 async def command_mis_archivos(update, context):
     await show_redeemed_files(update, context, order_by="recent", page=0)
 
-app.add_handler(CommandHandler("mis_archivos", command_mis_archivos))
-
 # Iniciar la aplicación
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
@@ -343,7 +341,7 @@ def main():
     app.add_handler(redeem_conv)
     app.add_handler(CommandHandler("admin", admin_menu))
     app.add_handler(CallbackQueryHandler(handle_view_files_callback, pattern=r"^view_"))
-    application.add_handler(CommandHandler("mis_archivos", command_mis_archivos))
+    app.add_handler(CommandHandler("mis_archivos", command_mis_archivos))
 
 
     print("🤖 Bot corriendo...")
