@@ -54,9 +54,15 @@ def add_file(name, telegram_file_id):
 def add_coupon(code):
     conn = sqlite3.connect("bot_store.db")
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO coupons (code) VALUES (?)", (code,))
-    conn.commit()
+    try:
+        cursor.execute("INSERT INTO coupons (code) VALUES (?)", (code,))
+        conn.commit()
+        result = True
+    except sqlite3.IntegrityError:
+        # Ya existe el cupón
+        result = False
     conn.close()
+    return result
 
 def validate_coupon(code):
     conn = sqlite3.connect("bot_store.db")
