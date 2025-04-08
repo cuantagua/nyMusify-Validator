@@ -97,10 +97,10 @@ def register_redemption(user_id, code):
 def get_file_by_id(file_id):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute("SELECT telegram_file_id FROM files WHERE id = ?", (file_id,))
+    cursor.execute("SELECT name, telegram_file_id FROM files WHERE id = ?", (file_id,))
     result = cursor.fetchone()
     conn.close()
-    return result[0] if result else None
+    return result if result else (None, None)
 
 def associate_file_with_coupon(coupon_code, file_id):
     conn = sqlite3.connect(DB_NAME)
