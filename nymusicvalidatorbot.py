@@ -1,5 +1,5 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user
+from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user, generate_coupons_csv
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackContext,
     CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
@@ -8,7 +8,7 @@ from telegram.ext import (
 import sqlite3
 
 init_db()
-UPLOAD, CREATE_COUPON, ASSIGN_FILE = range(3)
+UPLOAD, ASK_COUPONS, GENERATE_COUPONS = range(10, 13)
 ASSIGN_COUPON, SELECT_FILE = range(3, 5)
 
 ADMIN_IDS = [851194595]
@@ -111,15 +111,9 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🚫 No tienes permisos para acceder a este menú.")
         return
 
-    keyboard = [
-        [InlineKeyboardButton("📤 Subir nuevo archivo", callback_data='upload_file')],
-        [InlineKeyboardButton("🎫 Crear nuevo cupón", callback_data='create_coupon')],
-        [InlineKeyboardButton("🔗 Asociar archivo a cupón", callback_data='assign_file')],  # nuevo botón
-    ]
+    keyboard = [[InlineKeyboardButton("📤 Subir archivo", callback_data='upload_file')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
-    
-from db_functions import add_file  # Función que ahora veremos
 
 # Estados
 
@@ -323,27 +317,77 @@ async def handle_file_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         else:
             await query.message.reply_text("❌ Archivo no encontrado.")
 
+# Guardar el archivo
+async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    doc = update.message.document or update.message.audio
+    if not doc:
+        await update.message.reply_text("❌ No se recibió un archivo válido.")
+        return ConversationHandler.END
+
+    name = doc.file_name or "audio_sin_nombre.mp3"
+    file_id = doc.file_id
+
+    add_file(name, file_id)
+    context.user_data['last_file_name'] = name
+
+    # Preguntar si quiere generar cupones
+    keyboard = [
+        [InlineKeyboardButton("✅ Sí", callback_data='generate_yes')],
+        [InlineKeyboardButton("❌ No", callback_data='generate_no')],
+    ]
+    await update.message.reply_text(f"✅ Archivo '{name}' guardado.\n\n¿Deseas generar cupones para este archivo?", reply_markup=InlineKeyboardMarkup(keyboard))
+    return ASK_COUPONS
+
+# Respuesta del admin: ¿generar cupones?
+async def handle_coupon_decision(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == "generate_no":
+        await query.edit_message_text("📁 Proceso finalizado sin generar cupones.")
+        return ConversationHandler.END
+
+    await query.edit_message_text("🧮 ¿Cuántos cupones deseas generar?")
+    return GENERATE_COUPONS
+
+# Generar cupones en CSV
+async def handle_coupon_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        cantidad = int(update.message.text.strip())
+        if cantidad <= 0 or cantidad > 1000:
+            raise ValueError
+
+        file_name = context.user_data.get("last_file_name")
+        if not file_name:
+            await update.message.reply_text("❌ No se encontró el archivo.")
+            return ConversationHandler.END
+
+        # Generar cupones CSV
+        csv_path = generate_coupons_csv(file_name, cantidad)
+
+        with open(csv_path, 'rb') as f:
+            await update.message.reply_document(f, filename="cupones.csv", caption="🎫 Lista de cupones generada.")
+
+        return ConversationHandler.END
+
+    except ValueError:
+        await update.message.reply_text("❌ Por favor, escribe un número válido.")
+        return GENERATE_COUPONS
+
 # Iniciar la aplicación
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
 
     admin_conv = ConversationHandler(
-    entry_points=[
-        CallbackQueryHandler(start_upload, pattern="^upload_file$"),
-        CallbackQueryHandler(start_create_coupon, pattern="^create_coupon$"),
-        CallbackQueryHandler(admin_button_handler, pattern="^assign_file$"),
-    ],
+    entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
     states={
         UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
-        SELECT_FILE: [MessageHandler(filters.ATTACHMENT, assign_file_to_coupon)],
-
-        CREATE_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_create_coupon)],
-        ASSIGN_COUPON: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_coupon_code)],
-
+        ASK_COUPONS: [CallbackQueryHandler(handle_coupon_decision, pattern="^generate_")],
+        GENERATE_COUPONS: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_coupon_quantity)],
     },
     fallbacks=[CommandHandler("cancel", cancel)],
-    )
+)
     # Conversación para redimir cupón
     redeem_conv = ConversationHandler(
     entry_points=[CallbackQueryHandler(menu_handler, pattern="^(redeem|my_files|help)$")],
