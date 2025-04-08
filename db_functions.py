@@ -66,13 +66,13 @@ def add_coupon(code):
     finally:
         conn.close()
 
-def add_file(name, file_id):
-    conn = sqlite3.connect(DB)
+def add_file(name, telegram_file_id):
+    conn = sqlite3.connect("bot_store.db")
     c = conn.cursor()
-    c.execute("INSERT INTO files (name, file_id) VALUES (?, ?)", (name, file_id))
+    c.execute("INSERT INTO files (name, telegram_file_id) VALUES (?, ?)", (name, telegram_file_id))
     conn.commit()
     conn.close()
-
+    
 def associate_file_with_coupon(coupon: str, file_id: int):
     conn = sqlite3.connect("bot_database.db")
     cursor = conn.cursor()
