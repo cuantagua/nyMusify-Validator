@@ -62,13 +62,18 @@ def add_coupon(code: str) -> bool:
     except sqlite3.IntegrityError:
         return False
 
-def validate_coupon(code):
-    conn = sqlite3.connect("bot_store.db")
+def validate_coupon(code: str):
+    conn = sqlite3.connect("bot_database.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT code FROM coupons WHERE code = ?", (code,))
-    result = cursor.fetchone()
+
+    cursor.execute("SELECT file_id FROM coupon_files WHERE coupon_code = ?", (code,))
+    rows = cursor.fetchall()
     conn.close()
-    return result is not None
+
+    if rows:
+        return [row[0] for row in rows]  # Devuelve lista de IDs
+    else:
+        return None  # O []
 
 def coupon_used_by_user(user_id, code):
     conn = sqlite3.connect("bot_store.db")
