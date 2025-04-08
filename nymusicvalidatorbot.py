@@ -1,5 +1,5 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file
+from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackContext,
     CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
@@ -7,6 +7,7 @@ from telegram.ext import (
 
 import sqlite3
 
+init_db()
 UPLOAD, CREATE_COUPON, ASSIGN_FILE = range(3)
 ASSIGN_COUPON, SELECT_FILE = range(3, 5)
 
