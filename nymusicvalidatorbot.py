@@ -298,7 +298,7 @@ async def handle_view_files_callback(update, context):
 async def command_mis_archivos(update, context):
     await show_redeemed_files(update, context, order_by="recent", page=0)
 
-application.add_handler(CommandHandler("mis_archivos", command_mis_archivos))
+app.add_handler(CommandHandler("mis_archivos", command_mis_archivos))
 
 # Iniciar la aplicación
 def main():
