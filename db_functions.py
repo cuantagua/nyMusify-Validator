@@ -88,3 +88,13 @@ def get_file_by_id(file_id):
     result = cursor.fetchone()
     conn.close()
     return result[0] if result else None
+
+def associate_file_with_coupon(coupon_code, file_id):
+    conn = sqlite3.connect("bot_store.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO coupon_files (coupon_code, file_id) VALUES (?, ?)",
+        (coupon_code, file_id)
+    )
+    conn.commit()
+    conn.close()
