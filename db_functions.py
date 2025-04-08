@@ -120,7 +120,7 @@ def get_redeemed_files_by_user(user_id, order_by="recent", limit=5, offset=0):
     if order_by == "name":
         order_clause = "f.name ASC"
 
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT f.name, f.telegram_file_id, r.timestamp
         FROM redemptions r
         JOIN coupons c ON r.coupon_code = c.code
@@ -128,9 +128,9 @@ def get_redeemed_files_by_user(user_id, order_by="recent", limit=5, offset=0):
         JOIN files f ON cf.file_id = f.id
         WHERE r.user_id = ?
         GROUP BY f.id
-        ORDER BY {}
+        ORDER BY {order_clause}
         LIMIT ? OFFSET ?
-    """.format(order_clause), (user_id, limit, offset))
+    """, (user_id, limit, offset))
 
     files = cursor.fetchall()
 
@@ -139,7 +139,7 @@ def get_redeemed_files_by_user(user_id, order_by="recent", limit=5, offset=0):
         SELECT COUNT(DISTINCT f.id)
         FROM redemptions r
         JOIN coupons c ON r.coupon_code = c.code
-        JOIN coupon_files cf ON c.id = cf.coupon_id
+        JOIN coupon_files cf ON c.code = cf.coupon_code
         JOIN files f ON cf.file_id = f.id
         WHERE r.user_id = ?
     """, (user_id,))
