@@ -112,35 +112,38 @@ def associate_file_with_coupon(coupon_code, file_id):
     conn.commit()
     conn.close()
 
-def get_redeemed_files_by_user(user_id, order_by="recent", limit=10, offset=0):
-    conn = sqlite3.connect(DB_NAME)
+def get_redeemed_files_by_user(user_id, order_by="recent", limit=5, offset=0):
+    conn = sqlite3.connect("bot_store.db")
     cursor = conn.cursor()
 
-    order_clause = "r.timestamp DESC" if order_by == "recent" else "f.name ASC"
+    order_clause = "r.timestamp DESC"
+    if order_by == "name":
+        order_clause = "f.name ASC"
 
-    query = """
+    cursor.execute("""
         SELECT f.name, f.telegram_file_id, r.timestamp
         FROM redemptions r
-        JOIN coupon_files cf ON r.coupon_code = cf.coupon_code
+        JOIN coupons c ON r.coupon_code = c.code
+        JOIN coupon_files cf ON c.id = cf.coupon_id
         JOIN files f ON cf.file_id = f.id
         WHERE r.user_id = ?
         GROUP BY f.id
         ORDER BY {}
         LIMIT ? OFFSET ?
-    """.format(order_clause)
+    """.format(order_clause), (user_id, limit, offset))
 
-    cursor.execute(query, (user_id, limit, offset))
-    results = cursor.fetchall()
+    files = cursor.fetchall()
 
-    # Contar total para paginación
+    # Para contar total
     cursor.execute("""
         SELECT COUNT(DISTINCT f.id)
         FROM redemptions r
-        JOIN coupon_files cf ON r.coupon_code = cf.coupon_code
+        JOIN coupons c ON r.coupon_code = c.code
+        JOIN coupon_files cf ON c.id = cf.coupon_id
         JOIN files f ON cf.file_id = f.id
         WHERE r.user_id = ?
     """, (user_id,))
     total = cursor.fetchone()[0]
 
     conn.close()
-    return results, total
+    return files, total
