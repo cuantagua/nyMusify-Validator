@@ -180,8 +180,14 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("⚠️ Archivo sin tipo MIME. Lo guardaré de todas formas.")
     
     file_id = doc.file_id
-    add_file(name, file_id)
-    await update.message.reply_text(f"✅ Archivo '{name}' guardado con éxito.")
+
+    try:
+        add_file(name, file_id)
+        context.user_data['last_file_name'] = name
+        await update.message.reply_text(f"✅ Archivo '{name}' guardado con éxito.")
+    except sqlite3.IntegrityError:
+        await update.message.reply_text("⚠️ Este archivo ya fue subido anteriormente. No se ha vuelto a guardar.")
+
     return ConversationHandler.END
 
 async def handle_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
