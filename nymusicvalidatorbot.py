@@ -161,6 +161,7 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
     doc = None
     name = "audio_sin_nombre.mp3"
     mime_type = ""
+    tipo = "musica"  # Por ahora, puedes dejarlo fijo o hacer que lo pregunte luego
 
     if update.message.document:
         doc = update.message.document
@@ -176,20 +177,13 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return ConversationHandler.END
 
     if not mime_type.startswith("audio/"):
-        # A veces los reenvíos no tienen MIME, así que damos una advertencia en vez de bloquear
         await update.message.reply_text("⚠️ Archivo sin tipo MIME. Lo guardaré de todas formas.")
-    
+
     file_id = doc.file_id
-
-    try:
-        add_file(name, file_id)
-        context.user_data['last_file_name'] = name
-        await update.message.reply_text(f"✅ Archivo '{name}' guardado con éxito.")
-    except sqlite3.IntegrityError:
-        await update.message.reply_text("⚠️ Este archivo ya fue subido anteriormente. No se ha vuelto a guardar.")
-
+    add_file(name, file_id, tipo)
+    await update.message.reply_text(f"✅ Archivo '{name}' guardado con éxito.")
     return ConversationHandler.END
-
+    
 async def handle_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
     code = update.message.text.strip().upper()
 
