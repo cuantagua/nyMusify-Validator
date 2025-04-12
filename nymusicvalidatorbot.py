@@ -71,8 +71,21 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # Guarda el archivo en la base de datos
     add_file(file_name, file_id, "archivo")
 
+    # Mensaje de confirmación
     await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
-    return ConversationHandler.END
+
+    # Ofrecer opciones al usuario
+    keyboard = [
+        [InlineKeyboardButton("✅ Generar códigos", callback_data="generate_code")],
+        [InlineKeyboardButton("❌ Finalizar", callback_data="finish_upload")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(
+        "¿Qué deseas hacer ahora?",
+        reply_markup=reply_markup
+    )
+    return GENERATE_CODE
 
 # Menú principal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):

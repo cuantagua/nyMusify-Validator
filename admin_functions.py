@@ -61,14 +61,12 @@ async def handle_generate_code(update: Update, context: ContextTypes.DEFAULT_TYP
     query = update.callback_query
     await query.answer()
 
-    await query.message.reply_text("📋 Entraste en la función para generar códigos.")
-
     if query.data == "generate_code":
         await query.message.reply_text("🧮 ¿Cuántos códigos deseas generar?")
         return ASK_CODE_QUANTITY
 
     elif query.data == "finish_upload":
-        await query.message.reply_text("✅ Proceso finalizado.")
+        await query.message.reply_text("✅ Proceso finalizado. Gracias.")
         return ConversationHandler.END
 
 async def handle_code_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE):
