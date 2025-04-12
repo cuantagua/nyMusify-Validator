@@ -70,6 +70,8 @@ async def handle_generate_code(update: Update, context: ContextTypes.DEFAULT_TYP
         return ConversationHandler.END
 
 async def handle_code_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(f"context.user_data: {context.user_data}")  # Depuración
+
     try:
         cantidad = int(update.message.text.strip())
         if cantidad <= 0:
