@@ -15,14 +15,16 @@ def init_db():
         CREATE TABLE IF NOT EXISTS files (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
-            telegram_file_id TEXT UNIQUE
+            telegram_file_id TEXT UNIQUE,
+            tipo TEXT
         )
     """)
 
     # Tabla de cupones
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS coupons (
-            code TEXT PRIMARY KEY
+            code TEXT PRIMARY KEY,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
@@ -46,14 +48,24 @@ def init_db():
         )
     """)
 
+    # Archivos redimidos por usuario (más específica que redemptions)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_files (
+            user_id INTEGER,
+            file_id INTEGER,
+            redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (file_id) REFERENCES files(id)
+        )
+    """)
+
     conn.commit()
     conn.close()
 
 
 # Otras funciones:
 
-def add_file(name, telegram_file_id):
-    conn = sqlite3.connect("bot_store.db")
+def add_file(name, telegram_file_id, tipo):
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     # Verificar si ya existe ese telegram_file_id
@@ -64,7 +76,7 @@ def add_file(name, telegram_file_id):
         conn.close()
         raise ValueError("El archivo ya existe en la base de datos.")
 
-    cursor.execute("INSERT INTO files (name, telegram_file_id) VALUES (?, ?)", (name, telegram_file_id))
+    cursor.execute("INSERT INTO files (name, telegram_file_id, tipo) VALUES (?, ?, ?)", (name, telegram_file_id, tipo))
     conn.commit()
     conn.close()
 
@@ -104,6 +116,13 @@ def register_redemption(user_id, code):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute("INSERT INTO redemptions (user_id, coupon_code) VALUES (?, ?)", (user_id, code))
+
+    # Registrar archivos desbloqueados
+    cursor.execute("SELECT file_id FROM coupon_files WHERE coupon_code = ?", (code,))
+    file_ids = cursor.fetchall()
+    for (file_id,) in file_ids:
+        cursor.execute("INSERT INTO user_files (user_id, file_id) VALUES (?, ?)", (user_id, file_id))
+
     conn.commit()
     conn.close()
 
@@ -126,20 +145,18 @@ def associate_file_with_coupon(coupon_code, file_id):
     conn.close()
 
 def get_redeemed_files_by_user(user_id, order_by="recent", limit=5, offset=0):
-    conn = sqlite3.connect("bot_store.db")
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    order_clause = "r.timestamp DESC"
+    order_clause = "uf.redeemed_at DESC"
     if order_by == "name":
         order_clause = "f.name ASC"
 
     cursor.execute(f"""
-        SELECT f.name, f.telegram_file_id, r.timestamp
-        FROM redemptions r
-        JOIN coupons c ON r.coupon_code = c.code
-        JOIN coupon_files cf ON c.code = cf.coupon_code
-        JOIN files f ON cf.file_id = f.id
-        WHERE r.user_id = ?
+        SELECT f.name, f.telegram_file_id, f.tipo, uf.redeemed_at
+        FROM user_files uf
+        JOIN files f ON uf.file_id = f.id
+        WHERE uf.user_id = ?
         GROUP BY f.id
         ORDER BY {order_clause}
         LIMIT ? OFFSET ?
@@ -150,11 +167,9 @@ def get_redeemed_files_by_user(user_id, order_by="recent", limit=5, offset=0):
     # Para contar total
     cursor.execute("""
         SELECT COUNT(DISTINCT f.id)
-        FROM redemptions r
-        JOIN coupons c ON r.coupon_code = c.code
-        JOIN coupon_files cf ON c.code = cf.coupon_code
-        JOIN files f ON cf.file_id = f.id
-        WHERE r.user_id = ?
+        FROM user_files uf
+        JOIN files f ON uf.file_id = f.id
+        WHERE uf.user_id = ?
     """, (user_id,))
     total = cursor.fetchone()[0]
 
@@ -166,7 +181,7 @@ def generate_code():
            f"{''.join(random.choices(string.ascii_uppercase + string.digits, k=3))}"
 
 def generate_coupons_csv(file_name, cantidad):
-    conn = sqlite3.connect("bot_store.db")
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     # Obtener ID del archivo
