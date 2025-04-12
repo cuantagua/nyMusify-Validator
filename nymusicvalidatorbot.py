@@ -52,6 +52,21 @@ async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return UPLOAD
 
+async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    doc = update.message.document
+    if not doc:
+        await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
+        return UPLOAD
+
+    file_id = doc.file_id
+    file_name = doc.file_name or "archivo_sin_nombre"
+
+    # Guarda el archivo en la base de datos
+    add_file(file_name, file_id, "archivo")
+
+    await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
+    return ConversationHandler.END
+
 # Menú principal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -134,7 +149,7 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     admin_conv = ConversationHandler(
-        entry_points=[CommandHandler("admin", admin_menu)],
+        entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
         states={
             UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
             GENERATE_CODE: [CallbackQueryHandler(handle_generate_code, pattern="^(generate_code|finish_upload)$")],
