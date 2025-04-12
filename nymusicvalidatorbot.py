@@ -55,7 +55,14 @@ async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Entrando a handle_file_upload")  # Mensaje de depuración
-    doc = update.message.document
+
+    # Verifica si el mensaje contiene un archivo
+    doc = update.message.document if update.message else None
+
+    # Maneja archivos reenviados
+    if not doc and update.message and update.message.forward_from:
+        doc = update.message.document
+
     if not doc:
         await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
         return UPLOAD
