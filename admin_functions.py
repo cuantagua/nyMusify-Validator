@@ -1,4 +1,3 @@
-from nymusicvalidatorbot import ASK_CODE_QUANTITY
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup  # type: ignore
 from telegram.ext import ContextTypes, ConversationHandler # type: ignore
 from db_functions import add_file, add_coupon, associate_file_with_coupon

@@ -1,7 +1,8 @@
+from constants import UPLOAD, GENERATE_CODE, ASK_CODE_QUANTITY, CREATE_COUPON, REDEEM, GENERATE_COUPONS
 from admin_functions import handle_file_upload, handle_generate_code, handle_code_quantity
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton # type: ignore
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user, generate_coupons_csv
-from telegram.ext import ( # type: ignore
+from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackContext,
     CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
 )
@@ -11,7 +12,6 @@ import sqlite3
 from admin_panel import admin_panel, handle_admin_choice, ADMIN_PANEL, WAITING_FILE
 
 init_db()
-UPLOAD, GENERATE_CODE, ASK_CODE_QUANTITY, CREATE_COUPON, REDEEM, GENERATE_COUPONS = range(6)
 
 ASSIGN_COUPON, SELECT_FILE = range(5, 7)
 
