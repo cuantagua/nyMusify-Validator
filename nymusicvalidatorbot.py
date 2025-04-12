@@ -319,24 +319,31 @@ async def handle_file_request(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 # Guardar el archivo
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    doc = update.message.document or update.message.audio
+    doc = None
+    name = "audio_sin_nombre.mp3"
+    mime_type = ""
+    tipo = "musica"  # <- Lo estamos fijando aquí temporalmente
+
+    if update.message.document:
+        doc = update.message.document
+        name = doc.file_name or "audio_documento.mp3"
+        mime_type = doc.mime_type or ""
+    elif update.message.audio:
+        doc = update.message.audio
+        name = doc.file_name or doc.title or "audio.mp3"
+        mime_type = doc.mime_type or ""
+
     if not doc:
         await update.message.reply_text("❌ No se recibió un archivo válido.")
         return ConversationHandler.END
 
-    name = doc.file_name or "audio_sin_nombre.mp3"
+    if not mime_type.startswith("audio/"):
+        await update.message.reply_text("⚠️ Archivo sin tipo MIME. Lo guardaré de todas formas.")
+
     file_id = doc.file_id
-
-    add_file(name, file_id)
-    context.user_data['last_file_name'] = name
-
-    # Preguntar si quiere generar cupones
-    keyboard = [
-        [InlineKeyboardButton("✅ Sí", callback_data='generate_yes')],
-        [InlineKeyboardButton("❌ No", callback_data='generate_no')],
-    ]
-    await update.message.reply_text(f"✅ Archivo '{name}' guardado.\n\n¿Deseas generar cupones para este archivo?", reply_markup=InlineKeyboardMarkup(keyboard))
-    return ASK_COUPONS
+    add_file(name, file_id, tipo)  # <- Aquí ahora estamos pasando los 3 argumentos necesarios
+    await update.message.reply_text(f"✅ Archivo '{name}' guardado con éxito.")
+    return ConversationHandler.END
 
 # Respuesta del admin: ¿generar cupones?
 async def handle_coupon_decision(update: Update, context: ContextTypes.DEFAULT_TYPE):
