@@ -3,9 +3,12 @@ from telegram.ext import ContextTypes, ConversationHandler # type: ignore
 from db_functions import add_file, add_coupon, associate_file_with_coupon
 import sqlite3
 from config import DB, ADMIN_IDS
+import random
+import csv
 
 GENERATE_CODE = 1  # Define el valor correcto según tu flujo de estados
 GENERATE_CODE = range(1)  # Nuevo estado para generar código
+ASK_CODE_QUANTITY = 2  # Nuevo estado para preguntar la cantidad de códigos
 
 async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -69,3 +72,40 @@ async def handle_generate_code(update: Update, context: ContextTypes.DEFAULT_TYP
     elif query.data == "finish_upload":
         await query.message.reply_text("✅ Proceso finalizado.")
         return ConversationHandler.END
+
+async def handle_code_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        cantidad = int(update.message.text.strip())
+        if cantidad <= 0:
+            raise ValueError("La cantidad debe ser mayor a 0.")
+
+        file_id = context.user_data.get('last_uploaded_file_id')
+        if not file_id:
+            await update.message.reply_text("❌ No se encontró el archivo para asociar los códigos.")
+            return ConversationHandler.END
+
+        # Generar los códigos
+        codes = []
+        for _ in range(cantidad):
+            code = f"{random.randint(100, 999)}-{random.randint(100, 999)}"
+            success = add_coupon(code)
+            if success:
+                associate_file_with_coupon(code, file_id)
+                codes.append(code)
+
+        # Guardar los códigos en un archivo CSV
+        csv_file = "generated_codes.csv"
+        with open(csv_file, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Código"])
+            writer.writerows([[code] for code in codes])
+
+        # Enviar el archivo CSV al administrador
+        with open(csv_file, "rb") as f:
+            await update.message.reply_document(f, filename=csv_file, caption="✅ Aquí están los códigos generados.")
+
+        return ConversationHandler.END
+
+    except ValueError:
+        await update.message.reply_text("❌ Por favor, escribe un número válido.")
+        return ASK_CODE_QUANTITY
