@@ -421,13 +421,14 @@ async def handle_tipo_archivo(update: Update, context: ContextTypes.DEFAULT_TYPE
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
-    from admin_functions import handle_file_upload, handle_generate_code
+    from admin_functions import handle_file_upload, handle_generate_code, handle_code_quantity
 
     admin_conv = ConversationHandler(
         entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
         states={
             UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
             GENERATE_CODE: [CallbackQueryHandler(handle_generate_code, pattern="^(generate_code|finish_upload)$")],
+            ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
