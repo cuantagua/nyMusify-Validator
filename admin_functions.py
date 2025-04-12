@@ -1,12 +1,14 @@
-import csv
-import random
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, ConversationHandler
+# filepath: /Users/mb-juan/TG BOT nV/nyMusify-Validator/nymusicvalidatorbot.py
+# Elimina esta línea:
+from admin_functions import GENERATE_CODEfrom
+from nymusicvalidatorbot import ASK_CODE_QUANTITY telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup # type: ignore
+from telegram.ext import ContextTypes, ConversationHandler # type: ignore
 from db_functions import add_file, add_coupon, associate_file_with_coupon
 import sqlite3
 from config import DB, ADMIN_IDS
 
-GENERATE_CODE, ASK_CODE_QUANTITY = range(2)  # Estados para generar códigos
+GENERATE_CODE = 1  # Define el valor correcto según tu flujo de estados
+GENERATE_CODE = range(1)  # Nuevo estado para generar código
 
 async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -52,7 +54,7 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        f"✅ Archivo '{name}' guardado con éxito.\n\n¿Deseas generar códigos para este archivo?",
+        f"✅ Archivo '{name}' guardado con éxito.\n\n¿Deseas generar un código para este archivo?",
         reply_markup=reply_markup
     )
     return GENERATE_CODE
@@ -61,6 +63,8 @@ async def handle_generate_code(update: Update, context: ContextTypes.DEFAULT_TYP
     query = update.callback_query
     await query.answer()
 
+    await query.message.reply_text("📋 Entraste en la función para generar códigos.")
+
     if query.data == "generate_code":
         await query.message.reply_text("🧮 ¿Cuántos códigos deseas generar?")
         return ASK_CODE_QUANTITY
@@ -68,40 +72,3 @@ async def handle_generate_code(update: Update, context: ContextTypes.DEFAULT_TYP
     elif query.data == "finish_upload":
         await query.message.reply_text("✅ Proceso finalizado.")
         return ConversationHandler.END
-
-async def handle_code_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        quantity = int(update.message.text.strip())
-        if quantity <= 0:
-            raise ValueError("La cantidad debe ser mayor a 0.")
-
-        file_id = context.user_data.get('last_uploaded_file_id')
-        if not file_id:
-            await update.message.reply_text("❌ No se encontró el archivo para asociar los códigos.")
-            return ConversationHandler.END
-
-        # Generar los códigos
-        codes = []
-        for _ in range(quantity):
-            code = f"{random.randint(100, 999)}-{random.randint(100, 999)}"
-            success = add_coupon(code)
-            if success:
-                associate_file_with_coupon(code, file_id)
-                codes.append(code)
-
-        # Guardar los códigos en un archivo CSV
-        csv_file = "generated_codes.csv"
-        with open(csv_file, "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["Código"])
-            writer.writerows([[code] for code in codes])
-
-        # Enviar el archivo CSV al administrador
-        with open(csv_file, "rb") as f:
-            await update.message.reply_document(f, filename=csv_file, caption="✅ Aquí están los códigos generados.")
-
-        return ConversationHandler.END
-
-    except ValueError:
-        await update.message.reply_text("❌ Por favor, escribe un número válido.")
-        return ASK_CODE_QUANTITY

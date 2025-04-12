@@ -1,4 +1,4 @@
-from admin_functions import GENERATE_CODE
+from admin_functions import handle_file_upload, handle_generate_code, handle_code_quantity
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton # type: ignore
 from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user, generate_coupons_csv
 from telegram.ext import ( # type: ignore
@@ -11,9 +11,9 @@ import sqlite3
 from admin_panel import admin_panel, handle_admin_choice, ADMIN_PANEL, WAITING_FILE
 
 init_db()
-UPLOAD, GENERATE_CODE, ASK_CODE_QUANTITY = range(3)
+UPLOAD, GENERATE_CODE, ASK_CODE_QUANTITY, CREATE_COUPON, REDEEM, GENERATE_COUPONS = range(6)
 
-ASSIGN_COUPON, SELECT_FILE = range(3, 5)
+ASSIGN_COUPON, SELECT_FILE = range(5, 7)
 
 ADMIN_IDS = [851194595]
 
@@ -160,6 +160,12 @@ async def start_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE
     await query.message.reply_text("📝 Escribe el código del nuevo cupón (formato XXX-XXX):")
     return CREATE_COUPON
 
+
+keyboard = [
+    [InlineKeyboardButton("✅ Sí, generar códigos", callback_data="generate_code")],
+    [InlineKeyboardButton("❌ No, finalizar", callback_data="finish_upload")]
+]
+reply_markup = InlineKeyboardMarkup(keyboard)
 
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     doc = None
@@ -417,6 +423,20 @@ async def handle_tipo_archivo(update: Update, context: ContextTypes.DEFAULT_TYPE
         parse_mode="Markdown"
     )
     return ELEGIR_ORDEN
+
+async def handle_generate_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    await query.message.reply_text("📋 Entraste en la función para generar códigos.")
+
+    if query.data == "generate_code":
+        await query.message.reply_text("🧮 ¿Cuántos códigos deseas generar?")
+        return ASK_CODE_QUANTITY
+
+    elif query.data == "finish_upload":
+        await query.message.reply_text("✅ Proceso finalizado.")
+        return ConversationHandler.END
 
 # Iniciar la aplicación
 def main():
