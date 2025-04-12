@@ -380,6 +380,39 @@ async def handle_coupon_quantity(update: Update, context: ContextTypes.DEFAULT_T
         await update.message.reply_text("❌ Por favor, escribe un número válido.")
         return GENERATE_COUPONS
 
+TIPOS_DE_ARCHIVO = ["musica", "libros", "peliculas"]  # Puedes agregar más
+
+async def mis_archivos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("🎵 Música", callback_data="tipo_musica")],
+        [InlineKeyboardButton("📚 Libros", callback_data="tipo_libros")],
+        [InlineKeyboardButton("🎬 Películas", callback_data="tipo_peliculas")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("📁 ¿Qué tipo de archivos deseas ver?", reply_markup=reply_markup)
+ELEGIR_TIPO, ELEGIR_ORDEN = range(2)
+
+async def handle_tipo_archivo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    tipo_seleccionado = query.data.replace("tipo_", "")
+    context.user_data["tipo_archivo"] = tipo_seleccionado
+
+    keyboard = [
+        [InlineKeyboardButton("🕓 Últimos reclamados", callback_data="orden_recientes")],
+        [InlineKeyboardButton("🔤 Por nombre", callback_data="orden_nombre")],
+        [InlineKeyboardButton("🗂️ Por categoría", callback_data="orden_categoria")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(
+        f"📂 Elegiste ver archivos de tipo *{tipo_seleccionado.capitalize()}*.\n\n¿Cómo deseas ordenarlos?",
+        reply_markup=reply_markup,
+        parse_mode="Markdown"
+    )
+    return ELEGIR_ORDEN
+
 # Iniciar la aplicación
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
