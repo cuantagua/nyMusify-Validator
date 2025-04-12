@@ -1,3 +1,4 @@
+from admin_functions import GENERATE_CODE
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton # type: ignore
 from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user, generate_coupons_csv
 from telegram.ext import ( # type: ignore
@@ -193,7 +194,7 @@ async def handle_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
     import re
     if not re.match(r"^[A-Z0-9]{3}-[A-Z0-9]{3}$", code):
         await update.message.reply_text("❌ Código inválido. Usa el formato XXX-XXX (letras y números).")
-        return CREATE_COUPON
+        return CREATE_COUPON # type: ignore
 
     success = add_coupon(code)
     if success:
@@ -201,7 +202,7 @@ async def handle_create_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
         return ConversationHandler.END
     else:
         await update.message.reply_text("⚠️ Ese cupón ya existe. Prueba con otro código.")
-        return CREATE_COUPON
+        return CREATE_COUPON # type: ignore
 
 async def receive_coupon_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     code = update.message.text.strip().upper()
@@ -236,7 +237,7 @@ async def assign_file_to_coupon(update: Update, context: ContextTypes.DEFAULT_TY
     conn = sqlite3.connect(DB)
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM files WHERE telegram_file_id = ?", (file_id,))
-    row = cursor.fetchone()
+    row = conn.fetchone()
     conn.close()
 
     if not row:
@@ -420,16 +421,16 @@ async def handle_tipo_archivo(update: Update, context: ContextTypes.DEFAULT_TYPE
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
+    from admin_functions import handle_file_upload, handle_generate_code
 
     admin_conv = ConversationHandler(
-    entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
-    states={
-        UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
-        ASK_COUPONS: [CallbackQueryHandler(handle_coupon_decision, pattern="^generate_")],
-        GENERATE_COUPONS: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_coupon_quantity)],
-    },
-    fallbacks=[CommandHandler("cancel", cancel)],
-)
+        entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
+        states={
+            UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
+            GENERATE_CODE: [CallbackQueryHandler(handle_generate_code, pattern="^(generate_code|finish_upload)$")],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
 
     # Conversación para redimir cupón
     redeem_conv = ConversationHandler(
