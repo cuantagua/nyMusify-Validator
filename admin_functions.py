@@ -1,7 +1,5 @@
-# filepath: /Users/mb-juan/TG BOT nV/nyMusify-Validator/nymusicvalidatorbot.py
-# Elimina esta línea:
-from admin_functions import GENERATE_CODEfrom
-from nymusicvalidatorbot import ASK_CODE_QUANTITY telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup # type: ignore
+from nymusicvalidatorbot import ASK_CODE_QUANTITY
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup  # type: ignore
 from telegram.ext import ContextTypes, ConversationHandler # type: ignore
 from db_functions import add_file, add_coupon, associate_file_with_coupon
 import sqlite3
