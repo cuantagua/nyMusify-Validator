@@ -1,14 +1,12 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup  # type: ignore
-from telegram.ext import ContextTypes, ConversationHandler # type: ignore
+from telegram.ext import ContextTypes, ConversationHandler  # type: ignore
 from db_functions import add_file, add_coupon, associate_file_with_coupon
 import sqlite3
 from config import DB, ADMIN_IDS
 import random
 import csv
 
-GENERATE_CODE = 1  # Define el valor correcto según tu flujo de estados
-GENERATE_CODE = range(1)  # Nuevo estado para generar código
-ASK_CODE_QUANTITY = 2  # Nuevo estado para preguntar la cantidad de códigos
+UPLOAD, GENERATE_CODE, ASK_CODE_QUANTITY = range(3)  # Estados únicos
 
 async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
