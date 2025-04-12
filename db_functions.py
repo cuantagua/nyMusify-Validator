@@ -61,11 +61,8 @@ def init_db():
     conn.commit()
     conn.close()
 
-
-# Otras funciones:
-
 def add_file(name, telegram_file_id, tipo):
-    conn = sqlite3.connect("bot_store.db")
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     # Verificar si ya existe ese telegram_file_id
@@ -76,7 +73,7 @@ def add_file(name, telegram_file_id, tipo):
         conn.close()
         raise ValueError("El archivo ya existe en la base de datos.")
 
-    cursor.execute("INSERT INTO files (name, telegram_file_id, type) VALUES (?, ?, ?)", (name, telegram_file_id, tipo))
+    cursor.execute("INSERT INTO files (name, telegram_file_id, tipo) VALUES (?, ?, ?)", (name, telegram_file_id, tipo))
     conn.commit()
     conn.close()
 
@@ -94,7 +91,6 @@ def add_coupon(code: str) -> bool:
 def validate_coupon(code: str):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-
     cursor.execute("SELECT file_id FROM coupon_files WHERE coupon_code = ?", (code,))
     rows = cursor.fetchall()
     conn.close()
@@ -207,10 +203,3 @@ def generate_coupons_csv(file_name, cantidad):
 
     conn.close()
     return csv_path
-
-def migrate_add_type_to_files():
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute("ALTER TABLE files ADD COLUMN type TEXT DEFAULT 'musica'")
-    conn.commit()
-    conn.close()
