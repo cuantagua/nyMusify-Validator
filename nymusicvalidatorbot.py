@@ -11,7 +11,8 @@ import sqlite3
 from admin_panel import admin_panel, handle_admin_choice, ADMIN_PANEL, WAITING_FILE
 
 init_db()
-UPLOAD, ASK_COUPONS, GENERATE_COUPONS = range(10, 13)
+UPLOAD, GENERATE_CODE, ASK_CODE_QUANTITY = range(3)
+
 ASSIGN_COUPON, SELECT_FILE = range(3, 5)
 
 ADMIN_IDS = [851194595]
