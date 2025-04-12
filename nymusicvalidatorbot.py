@@ -1,6 +1,6 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton # type: ignore
 from db_functions import validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user, generate_coupons_csv
-from telegram.ext import (
+from telegram.ext import ( # type: ignore
     ApplicationBuilder, CommandHandler, CallbackContext,
     CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
 )
