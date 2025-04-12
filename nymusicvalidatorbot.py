@@ -24,6 +24,19 @@ cancel_keyboard = ReplyKeyboardMarkup(
     one_time_keyboard=True
 )
 
+# Función para iniciar la subida de archivos
+async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id not in ADMIN_IDS:
+        await update.message.reply_text("🚫 No tienes permisos para acceder a esta función.")
+        return ConversationHandler.END
+
+    await update.message.reply_text(
+        "📤 Por favor, sube el archivo que deseas asociar a un código.",
+        reply_markup=cancel_keyboard
+    )
+    return UPLOAD
+
 # Menú principal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
