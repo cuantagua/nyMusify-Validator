@@ -149,7 +149,7 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     admin_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
+        entry_points=[CommandHandler("admin", admin_menu)],
         states={
             UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
             GENERATE_CODE: [CallbackQueryHandler(handle_generate_code, pattern="^(generate_code|finish_upload)$")],
@@ -169,6 +169,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(admin_conv)
     app.add_handler(redeem_conv)
+    app.add_handler(CommandHandler("admin", admin_menu))
 
     print("🤖 Bot corriendo...")
     app.run_polling()
