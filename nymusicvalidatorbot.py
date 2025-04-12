@@ -7,6 +7,8 @@ from telegram.ext import (
 
 import sqlite3
 
+from admin_panel import admin_panel, handle_admin_choice, ADMIN_PANEL, WAITING_FILE
+
 init_db()
 UPLOAD, ASK_COUPONS, GENERATE_COUPONS = range(10, 13)
 ASSIGN_COUPON, SELECT_FILE = range(3, 5)
@@ -428,6 +430,7 @@ def main():
     },
     fallbacks=[CommandHandler("cancel", cancel)],
 )
+
     # Conversación para redimir cupón
     redeem_conv = ConversationHandler(
     entry_points=[CallbackQueryHandler(menu_handler, pattern="^(redeem|my_files|help)$")],
@@ -452,6 +455,13 @@ def main():
     app.add_handler(CallbackQueryHandler(handle_view_files_callback, pattern=r"^view_"))
     app.add_handler(CommandHandler("mis_archivos", show_redeemed_files))
     app.add_handler(CallbackQueryHandler(handle_file_request, pattern=r"^getfile_"))
+    app.add_handler(ConversationHandler(
+        entry_points=[CommandHandler("admin", admin_panel)],
+        states={
+            ADMIN_PANEL: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_choice)],
+    },
+    fallbacks=[],
+    ))
 
 
 
