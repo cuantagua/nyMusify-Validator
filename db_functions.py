@@ -207,3 +207,10 @@ def generate_coupons_csv(file_name, cantidad):
 
     conn.close()
     return csv_path
+
+def migrate_add_type_to_files():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("ALTER TABLE files ADD COLUMN type TEXT DEFAULT 'musica'")
+    conn.commit()
+    conn.close()
