@@ -41,18 +41,20 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Función para iniciar la subida de archivos
 async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("Entrando a start_upload")  # Mensaje de depuración
     user_id = update.effective_user.id
     if user_id not in ADMIN_IDS:
         await update.message.reply_text("🚫 No tienes permisos para acceder a esta función.")
         return ConversationHandler.END
 
-    await update.message.reply_text(
+    await update.callback_query.message.reply_text(
         "📤 Por favor, sube el archivo que deseas asociar a un código.",
         reply_markup=cancel_keyboard
     )
     return UPLOAD
 
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("Entrando a handle_file_upload")  # Mensaje de depuración
     doc = update.message.document
     if not doc:
         await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
@@ -149,7 +151,7 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     admin_conv = ConversationHandler(
-        entry_points=[CommandHandler("admin", admin_menu)],
+        entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
         states={
             UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
             GENERATE_CODE: [CallbackQueryHandler(handle_generate_code, pattern="^(generate_code|finish_upload)$")],
