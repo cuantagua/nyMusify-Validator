@@ -24,6 +24,21 @@ cancel_keyboard = ReplyKeyboardMarkup(
     one_time_keyboard=True
 )
 
+# Menú de administrador
+async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id not in ADMIN_IDS:
+        await update.message.reply_text("🚫 No tienes permisos para acceder a este menú.")
+        return
+
+    keyboard = [
+        [InlineKeyboardButton("📤 Subir archivo", callback_data="upload_file")],
+        [InlineKeyboardButton("❌ Cancelar", callback_data="cancel_admin")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
+
 # Función para iniciar la subida de archivos
 async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -119,7 +134,7 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     admin_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
+        entry_points=[CommandHandler("admin", admin_menu)],
         states={
             UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
             GENERATE_CODE: [CallbackQueryHandler(handle_generate_code, pattern="^(generate_code|finish_upload)$")],
