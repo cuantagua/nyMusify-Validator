@@ -19,40 +19,40 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
 
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    doc = None
-    name = "audio_sin_nombre.mp3"
-    mime_type = ""
-    tipo = "musica"
+    print("Entrando a handle_file_upload")  # Mensaje de depuración
 
-    if update.message.document:
-        doc = update.message.document
-        name = doc.file_name or "audio_documento.mp3"
-        mime_type = doc.mime_type or ""
-    elif update.message.audio:
-        doc = update.message.audio
-        name = doc.file_name or doc.title or "audio.mp3"
-        mime_type = doc.mime_type or ""
+    # Verifica si el evento contiene un mensaje
+    if not update.message:
+        await update.callback_query.answer("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
+        return UPLOAD
 
-    if not doc:
-        await update.message.reply_text("❌ No se recibió un archivo válido.")
-        return ConversationHandler.END
+    # Verifica si el mensaje contiene un archivo como documento o audio
+    doc = update.message.document if update.message else None
+    audio = update.message.audio if update.message else None
 
-    file_id = doc.file_id
-    add_file(name, file_id, tipo)
+    if not doc and not audio:
+        await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
+        return UPLOAD
 
-    # Guardar el ID del archivo en el contexto para usarlo más adelante
-    context.user_data['last_uploaded_file_id'] = file_id
-    context.user_data['last_uploaded_file_name'] = name
+    # Procesa el archivo como documento o audio
+    file_id = doc.file_id if doc else audio.file_id
+    file_name = doc.file_name if doc else (audio.file_name or "archivo_sin_nombre.mp3")
 
-    # Preguntar si desea generar un código
+    # Guarda el archivo en la base de datos
+    add_file(file_name, file_id, "archivo")
+
+    # Mensaje de confirmación
+    await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
+
+    # Ofrecer opciones al usuario
     keyboard = [
-        [InlineKeyboardButton("✅ Sí, generar códigos", callback_data="generate_code")],
-        [InlineKeyboardButton("❌ No, finalizar", callback_data="finish_upload")]
+        [InlineKeyboardButton("✅ Generar códigos", callback_data="generate_code")],
+        [InlineKeyboardButton("❌ Finalizar", callback_data="finish_upload")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        f"✅ Archivo '{name}' guardado con éxito.\n\n¿Deseas generar un código para este archivo?",
+        "¿Qué deseas hacer ahora?",
         reply_markup=reply_markup
     )
     return GENERATE_CODE
