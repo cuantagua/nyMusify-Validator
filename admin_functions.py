@@ -10,7 +10,7 @@ UPLOAD, GENERATE_CODE, ASK_CODE_QUANTITY = range(3)  # Estados únicos
 
 async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS:
+    if (user_id not in ADMIN_IDS):
         await update.message.reply_text("🚫 No tienes permisos para acceder a este menú.")
         return
 
@@ -60,6 +60,8 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def handle_generate_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
+    print(f"context.user_data en handle_generate_code: {context.user_data}")
 
     if query.data == "generate_code":
         await query.message.reply_text("🧮 ¿Cuántos códigos deseas generar?")
