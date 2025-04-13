@@ -61,7 +61,7 @@ async def handle_generate_code(update: Update, context: ContextTypes.DEFAULT_TYP
     query = update.callback_query
     await query.answer()
 
-    print(f"context.user_data en handle_generate_code: {context.user_data}")
+    print(f"context.user_data en handle_generate_code: {context.user_data}")  # Depuración
 
     if query.data == "generate_code":
         await query.message.reply_text("🧮 ¿Cuántos códigos deseas generar?")
