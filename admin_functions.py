@@ -36,6 +36,7 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # Guarda el archivo en el contexto del usuario
     context.user_data['last_uploaded_file_id'] = file_id
     context.user_data['last_uploaded_file_name'] = file_name
+    print(f"Archivo guardado en context.user_data: {context.user_data}")  # Depuración
 
     # Guarda el archivo en la base de datos
     add_file(file_name, file_id, "archivo")
