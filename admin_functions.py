@@ -21,13 +21,6 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Entrando a handle_file_upload")  # Mensaje de depuración
 
-    # Verifica si el evento contiene un mensaje
-    if not update.message:
-        if update.callback_query:
-            await update.callback_query.answer("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
-            await update.callback_query.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
-        return UPLOAD
-
     # Verifica si el mensaje contiene un archivo como documento o audio
     doc = update.message.document if update.message else None
     audio = update.message.audio if update.message else None
@@ -39,6 +32,10 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # Procesa el archivo como documento o audio
     file_id = doc.file_id if doc else audio.file_id
     file_name = doc.file_name if doc else (audio.file_name or "archivo_sin_nombre.mp3")
+
+    # Guarda el archivo en el contexto del usuario
+    context.user_data['last_uploaded_file_id'] = file_id
+    context.user_data['last_uploaded_file_name'] = file_name
 
     # Guarda el archivo en la base de datos
     add_file(file_name, file_id, "archivo")
