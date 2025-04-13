@@ -123,13 +123,3 @@ async def handle_code_quantity(update: Update, context: ContextTypes.DEFAULT_TYP
     except ValueError:
         await update.message.reply_text("❌ Por favor, escribe un número válido.")
         return ASK_CODE_QUANTITY
-
-admin_conv = ConversationHandler(
-    entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
-    states={
-        UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
-        GENERATE_CODE: [CallbackQueryHandler(handle_generate_code, pattern="^(generate_code|finish_upload)$")],
-        ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity)],
-    },
-    fallbacks=[CommandHandler("cancel", cancel)],
-)
