@@ -169,7 +169,7 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     admin_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(handle_file_upload, pattern="^upload_file$")],
+        entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
         states={
             UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
             GENERATE_CODE: [CallbackQueryHandler(handle_generate_code, pattern="^(generate_code|finish_upload)$")],
