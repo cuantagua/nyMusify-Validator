@@ -23,7 +23,8 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     # Verifica si el evento contiene un mensaje
     if not update.message:
-        await update.callback_query.answer("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
+        if update.callback_query:
+            await update.callback_query.answer("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
         return UPLOAD
 
     # Verifica si el mensaje contiene un archivo como documento o audio
