@@ -18,6 +18,19 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
 
+async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("Entrando a start_upload")  # Mensaje de depuración
+    user_id = update.effective_user.id
+    if user_id not in ADMIN_IDS:
+        await update.message.reply_text("🚫 No tienes permisos para acceder a esta función.")
+        return ConversationHandler.END
+
+    await update.callback_query.message.reply_text(
+        "📤 Por favor, sube el archivo que deseas asociar a un código.",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancelar", callback_data="cancel")]])
+    )
+    return UPLOAD
+
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Entrando a handle_file_upload")  # Mensaje de depuración
 
