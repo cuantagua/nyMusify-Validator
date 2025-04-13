@@ -19,7 +19,7 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
 
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a handle_file_upload")  # Depuración
+    print("Entrando a handle_file_upload")  # Mensaje de depuración
 
     # Verifica si el mensaje contiene un archivo como documento o audio
     doc = update.message.document if update.message else None
