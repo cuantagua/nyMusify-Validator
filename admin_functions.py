@@ -19,7 +19,7 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
 
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a handle_file_upload")  # Mensaje de depuración
+    print("Entrando a handle_file_upload")  # Depuración
 
     # Verifica si el mensaje contiene un archivo como documento o audio
     doc = update.message.document if update.message else None
@@ -80,6 +80,7 @@ async def handle_code_quantity(update: Update, context: ContextTypes.DEFAULT_TYP
             raise ValueError("La cantidad debe ser mayor a 0.")
 
         file_id = context.user_data.get('last_uploaded_file_id')
+        file_name = context.user_data.get('last_uploaded_file_name')
         if not file_id:
             await update.message.reply_text("❌ No se encontró el archivo para asociar los códigos.")
             return ConversationHandler.END
@@ -94,7 +95,7 @@ async def handle_code_quantity(update: Update, context: ContextTypes.DEFAULT_TYP
                 codes.append(code)
 
         # Guardar los códigos en un archivo CSV
-        csv_file = "generated_codes.csv"
+        csv_file = f"codes_for_{file_name}.csv"
         with open(csv_file, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["Código"])
