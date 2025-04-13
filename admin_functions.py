@@ -19,7 +19,7 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
 
 async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a start_upload")  # Mensaje de depuración
+    print("Entrando a start_upload")  # Depuración
     user_id = update.effective_user.id
     if user_id not in ADMIN_IDS:
         await update.message.reply_text("🚫 No tienes permisos para acceder a esta función.")
@@ -32,7 +32,7 @@ async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return UPLOAD
 
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a handle_file_upload")  # Mensaje de depuración
+    print("Entrando a handle_file_upload")  # Depuración
 
     # Verifica si el mensaje contiene un archivo como documento o audio
     doc = update.message.document if update.message else None
