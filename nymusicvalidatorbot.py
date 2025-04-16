@@ -1,4 +1,96 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+    # Función unificada para subir archivo y generar códigos
+    async def handle_file_upload_and_generate_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        print("Entrando a handle_file_upload_and_generate_code")  # Mensaje de depuración
+
+        # Verifica si el mensaje contiene un archivo como documento o audio
+        doc = update.message.document if update.message else None
+        audio = update.message.audio if update.message else None
+
+        if not doc and not audio:
+            await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
+            return UPLOAD
+
+        # Procesa el archivo como documento o audio
+        file_id = doc.file_id if doc else audio.file_id
+        file_name = doc.file_name if doc else (audio.file_name or "archivo_sin_nombre.mp3")
+
+        # Guarda el archivo en la base de datos
+        add_file(file_name, file_id, "archivo")
+
+        # Mensaje de confirmación
+        await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
+
+        # Solicitar la cantidad de códigos a generar
+        await update.message.reply_text(
+            "🔢 ¿Cuántos códigos deseas generar para este archivo?",
+            reply_markup=cancel_keyboard
+        )
+        # Guardar el ID del archivo en el contexto para usarlo en el siguiente paso
+        context.user_data['file_id'] = file_id
+        return ASK_CODE_QUANTITY
+
+    # Manejar la cantidad de códigos y generarlos
+    async def handle_code_quantity_and_generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        print("Entrando a handle_code_quantity_and_generate")  # Mensaje de depuración
+
+        # Obtener la cantidad ingresada por el usuario
+        try:
+            quantity = int(update.message.text.strip())
+            if quantity <= 0:
+                raise ValueError("La cantidad debe ser mayor a 0.")
+        except ValueError:
+            await update.message.reply_text("❌ Por favor, ingresa un número válido mayor a 0.")
+            return ASK_CODE_QUANTITY
+
+        # Obtener el ID del archivo desde el contexto
+        file_id = context.user_data.get('file_id')
+        if not file_id:
+            await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
+            return ConversationHandler.END
+
+        # Generar los códigos y asociarlos al archivo
+        codes = add_coupon(file_id, quantity)  # Asume que esta función genera y guarda los códigos en la base de datos
+
+        # Enviar los códigos generados al usuario
+        codes_text = "\n".join(codes)
+        await update.message.reply_text(f"✅ Se generaron {quantity} códigos:\n{codes_text}")
+
+        # Finalizar el flujo
+        await update.message.reply_text("🎉 Proceso completado. ¿Necesitas algo más?", reply_markup=cancel_keyboard)
+        return ConversationHandler.END
+
+    # Actualización del ConversationHandler
+    def main():
+        app = ApplicationBuilder().token(TOKEN).build()
+
+        admin_conv = ConversationHandler(
+            entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
+            states={
+                UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload_and_generate_code)],
+                ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity_and_generate)],
+            },
+            fallbacks=[CommandHandler("cancel", cancel)],
+        )
+
+        redeem_conv = ConversationHandler(
+            entry_points=[CallbackQueryHandler(menu_handler, pattern="^(redeem|my_files|help)$")],
+            states={
+                REDEEM: [MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.Regex("^❌ Cancelar$"), redeem_coupon)],
+            },
+            fallbacks=[CommandHandler("cancel", cancel)],
+        )
+
+        app.add_handler(CommandHandler("start", start))
+        app.add_handler(admin_conv)
+        app.add_handler(redeem_conv)
+        app.add_handler(CommandHandler("admin", admin_menu))
+
+        print("🤖 Bot corriendo...")
+        app.run_polling()
+
+    if __name__ == '__main__':
+        main()
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
 )
