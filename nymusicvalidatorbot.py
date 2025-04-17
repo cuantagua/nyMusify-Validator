@@ -141,7 +141,13 @@ async def handle_code_quantity_and_generate(update: Update, context: ContextType
     print("Entrando a handle_code_quantity_and_generate")  # Mensaje de depuración
     print(f"context.user_data en handle_code_quantity_and_generate: {context.user_data}")  # Depuración
 
+    # Verificar que update.message no sea None
+    if not update.message or not update.message.text:
+        await update.message.reply_text("❌ No se recibió un mensaje válido. Por favor, ingresa un número.")
+        return ASK_CODE_QUANTITY
+
     try:
+        # Obtener la cantidad ingresada por el usuario
         quantity = int(update.message.text.strip())
         if quantity <= 0:
             raise ValueError("La cantidad debe ser mayor a 0.")
@@ -149,17 +155,21 @@ async def handle_code_quantity_and_generate(update: Update, context: ContextType
         await update.message.reply_text("❌ Por favor, ingresa un número válido mayor a 0.")
         return ASK_CODE_QUANTITY
 
+    # Obtener el ID del archivo desde el contexto
     file_id = context.user_data.get('file_id')
     if not file_id:
         await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
         return ConversationHandler.END
 
+    # Generar los códigos y asociarlos al archivo
     codes = add_coupon(file_id, quantity)
     codes_text = "\n".join(codes)
     await update.message.reply_text(f"✅ Se generaron {quantity} códigos:\n{codes_text}")
 
+    # Finalizar el flujo
     await update.message.reply_text("🎉 Proceso completado. ¿Necesitas algo más?", reply_markup=cancel_keyboard)
     return ConversationHandler.END
+
 
 # Iniciar la aplicación
 def main():
