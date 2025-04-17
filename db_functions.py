@@ -77,16 +77,15 @@ def add_file(name, telegram_file_id, tipo):
     conn.commit()
     conn.close()
 
-def add_coupon(code: str) -> bool:
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO coupons (code) VALUES (?)", (code,))
-        conn.commit()
-        conn.close()
-        return True
-    except sqlite3.IntegrityError:
-        return False
+# Ejemplo de definición de add_coupon en db_functions
+def add_coupon(file_id, quantity):
+    # Lógica para generar 'quantity' códigos asociados a 'file_id'
+    codes = []
+    for _ in range(quantity):
+        code = generate_unique_code()  # Suponiendo que existe una función para generar códigos únicos
+        save_code_to_db(file_id, code)  # Suponiendo que existe una función para guardar el código en la base de datos
+        codes.append(code)
+    return codes
 
 def validate_coupon(code: str):
     conn = sqlite3.connect(DB_NAME)
