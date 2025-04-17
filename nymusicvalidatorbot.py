@@ -166,6 +166,41 @@ async def handle_code_quantity_and_generate(update: Update, context: ContextType
     await update.message.reply_text("🎉 Proceso completado. ¿Necesitas algo más?", reply_markup=cancel_keyboard)
     return ConversationHandler.END
 
+# Manejar el ingreso del código del cupón
+async def handle_redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_input = update.message.text.strip().upper()
+    user_id = update.effective_user.id
+
+    # Validar el cupón
+    file_ids = validate_coupon(user_input)
+
+    if not file_ids:
+        await update.message.reply_text("❌ Cupón inválido. Verifica el código e inténtalo de nuevo.")
+        return REDEEM
+
+    if coupon_used_by_user(user_id, user_input):
+        await update.message.reply_text("🔁 Ya redimiste este cupón. Aquí están tus archivos:")
+    else:
+        register_redemption(user_id, user_input)
+        await update.message.reply_text("✅ ¡Cupón válido! Aquí tienes tus archivos:")
+
+    # Enviar los archivos asociados al cupón
+    for file_id in file_ids:
+        archivo = get_file_by_id(file_id)
+        if archivo:
+            name, telegram_file_id = archivo
+            await update.message.reply_document(telegram_file_id, caption=f"🎵 {name}")
+
+    return ConversationHandler.END
+
+# Manejar el callback query "redeem"
+async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == 'redeem':
+        await query.message.reply_text("🔑 Ingresa el código de cupón:", reply_markup=cancel_keyboard)
+        return REDEEM
 
 # Iniciar la aplicación
 def main():
