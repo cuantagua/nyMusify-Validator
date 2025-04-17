@@ -179,6 +179,7 @@ def main():
         entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
         states={
             UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
+            GENERATE_CODE: [CallbackQueryHandler(handle_code_quantity_and_generate, pattern="generate_code")],
             ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity_and_generate)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
