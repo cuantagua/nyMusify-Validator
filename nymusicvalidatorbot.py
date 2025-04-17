@@ -1,524 +1,10 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import ContextTypes
-
-# Cancelar conversación
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("🧾 Redimir cupón", callback_data='redeem')],
-        [InlineKeyboardButton("🎵 Mis archivos", callback_data='my_files')],
-        [InlineKeyboardButton("ℹ️ Ayuda", callback_data='help')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    # Verifica si el mensaje proviene de un chat o de un callback query
-    if update.message:
-        await update.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
-    elif update.callback_query:
-        await update.callback_query.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
-
-    return ConversationHandler.END
-
-    # Manejar la subida de archivos
-    async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        print("Entrando a handle_file_upload")  # Mensaje de depuración
-
-        try:
-            # Verifica si el mensaje contiene algún tipo de archivo
-            message = update.message
-            file = None
-            file_name = "archivo_sin_nombre"
-
-            if message.document:
-                file = message.document
-                file_name = file.file_name or "archivo_sin_nombre"
-            elif message.audio:
-                file = message.audio
-                file_name = file.file_name or "audio_sin_nombre.mp3"
-            elif message.photo:
-                file = message.photo[-1]  # Selecciona la foto con mayor resolución
-                file_name = "imagen_sin_nombre.jpg"
-            elif message.video:
-                file = message.video
-                file_name = "video_sin_nombre.mp4"
-            elif message.voice:
-                file = message.voice
-                file_name = "nota_de_voz.ogg"
-            elif message.sticker:
-                file = message.sticker
-                file_name = "sticker_sin_nombre.webp"
-
-            # Si no se detecta ningún archivo, muestra un mensaje de error
-            if not file:
-                await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
-                return UPLOAD
-
-            # Obtiene el file_id para descargar el archivo más tarde
-            file_id = file.file_id
-            print(f"Procesando archivo: file_id={file_id}, file_name={file_name}")  # Depuración
-
-            # Guarda el archivo en la base de datos
-            add_file(file_name, file_id, "archivo")
-            print("Archivo guardado en la base de datos correctamente.")  # Depuración
-
-            # Guarda el file_id en context.user_data
-            context.user_data['file_id'] = file_id
-            print(f"context.user_data después de guardar file_id: {context.user_data}")  # Depuración
-
-            # Mensaje de confirmación
-            await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
-
-            # Ofrecer opciones al usuario
-            keyboard = [
-                [InlineKeyboardButton("✅ Generar códigos", callback_data="generate_code")],
-                [InlineKeyboardButton("❌ Finalizar", callback_data="finish_upload")],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            await update.message.reply_text(
-                "¿Qué deseas hacer ahora?",
-                reply_markup=reply_markup
-            )
-            return GENERATE_CODE
-
-        except Exception as e:
-            print(f"Error al procesar el archivo: {e}")  # Log del error
-            await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
-            return UPLOAD
-
-    # Manejar la cantidad de códigos y generarlos
-    async def handle_code_quantity_and_generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        print("Entrando a handle_code_quantity_and_generate")  # Mensaje de depuración
-        print(f"context.user_data en handle_code_quantity_and_generate: {context.user_data}")  # Depuración
-
-        try:
-            # Obtener la cantidad ingresada por el usuario
-            quantity = int(update.message.text.strip())
-            if quantity <= 0:
-                raise ValueError("La cantidad debe ser mayor a 0.")
-        except ValueError:
-            await update.message.reply_text("❌ Por favor, ingresa un número válido mayor a 0.")
-            return ASK_CODE_QUANTITY
-
-        # Obtener el ID del archivo desde el contexto
-        file_id = context.user_data.get('file_id')
-        if not file_id:
-            await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
-            return ConversationHandler.END
-
-        # Generar los códigos y asociarlos al archivo
-        codes = add_coupon(file_id, quantity)  # Asume que esta función genera y guarda los códigos en la base de datos
-
-        # Enviar los códigos generados al usuario
-        codes_text = "\n".join(codes)
-        await update.message.reply_text(f"✅ Se generaron {quantity} códigos:\n{codes_text}")
-
-        # Finalizar el flujo
-        await update.message.reply_text("🎉 Proceso completado. ¿Necesitas algo más?", reply_markup=cancel_keyboard)
-        return ConversationHandler.END
-    # Manejar la subida de archivos
-    async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        print("Entrando a handle_file_upload")  # Mensaje de depuración
-
-        try:
-            # Verifica si el mensaje contiene algún tipo de archivo
-            message = update.message
-            file = None
-            file_name = "archivo_sin_nombre"
-
-            if message.document:
-                file = message.document
-                file_name = file.file_name or "archivo_sin_nombre"
-            elif message.audio:
-                file = message.audio
-                file_name = file.file_name or "audio_sin_nombre.mp3"
-            elif message.photo:
-                file = message.photo[-1]  # Selecciona la foto con mayor resolución
-                file_name = "imagen_sin_nombre.jpg"
-            elif message.video:
-                file = message.video
-                file_name = "video_sin_nombre.mp4"
-            elif message.voice:
-                file = message.voice
-                file_name = "nota_de_voz.ogg"
-            elif message.sticker:
-                file = message.sticker
-                file_name = "sticker_sin_nombre.webp"
-
-            # Si no se detecta ningún archivo, muestra un mensaje de error
-            if not file:
-                await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
-                return UPLOAD
-
-            # Obtiene el file_id para descargar el archivo más tarde
-            file_id = file.file_id
-            print(f"Procesando archivo: file_id={file_id}, file_name={file_name}")  # Depuración
-
-            # Guarda el archivo en la base de datos
-            add_file(file_name, file_id, "archivo")
-            print("Archivo guardado en la base de datos correctamente.")  # Depuración
-
-            # Mensaje de confirmación
-            await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
-
-            # Ofrecer opciones al usuario
-            keyboard = [
-                [InlineKeyboardButton("✅ Generar códigos", callback_data="generate_code")],
-                [InlineKeyboardButton("❌ Finalizar", callback_data="finish_upload")],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            await update.message.reply_text(
-                "¿Qué deseas hacer ahora?",
-                reply_markup=reply_markup
-            )
-            return GENERATE_CODE
-
-        except Exception as e:
-            print(f"Error al procesar el archivo: {e}")  # Log del error
-            await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
-            return UPLOAD
-    from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-    from telegram.ext import (
-        ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
-    )
-    from db_functions import (
-        validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user
-    )
-    import sqlite3
-
-    # Inicialización de la base de datos
-    init_db()
-
-    # Estados de conversación
-    UPLOAD, GENERATE_CODE, ASK_CODE_QUANTITY, REDEEM = range(4)
-
-    # Configuración
-    ADMIN_IDS = [851194595]
-    TOKEN = '7987679597:AAHK4k-8kzUmDBfC9_R1cVroDqXEDqz6sB4'
-
-    cancel_keyboard = ReplyKeyboardMarkup(
-        [[KeyboardButton("❌ Cancelar")]],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
-
-    # Cancelar conversación
-    async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        keyboard = [
-            [InlineKeyboardButton("🧾 Redimir cupón", callback_data='redeem')],
-            [InlineKeyboardButton("🎵 Mis archivos", callback_data='my_files')],
-            [InlineKeyboardButton("ℹ️ Ayuda", callback_data='help')],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        # Verifica si el mensaje proviene de un chat o de un callback query
-        if update.message:
-            await update.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
-        elif update.callback_query:
-            await update.callback_query.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
-
-        return ConversationHandler.END
-
-    # Menú principal
-    async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        keyboard = [
-            [InlineKeyboardButton("🧾 Redimir cupón", callback_data='redeem')],
-            [InlineKeyboardButton("🎵 Mis archivos", callback_data='my_files')],
-            [InlineKeyboardButton("ℹ️ Ayuda", callback_data='help')],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text("¡Bienvenido! ¿Qué deseas hacer?", reply_markup=reply_markup)
-
-    # Menú de administrador
-    async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        user_id = update.effective_user.id
-        if user_id not in ADMIN_IDS:
-            await update.message.reply_text("🚫 No tienes permisos para acceder a este menú.")
-            return
-
-        keyboard = [
-            [InlineKeyboardButton("📤 Subir archivo", callback_data="upload_file")],
-            [InlineKeyboardButton("❌ Cancelar", callback_data="cancel_admin")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
-
-    # Función para iniciar la subida de archivos
-    async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        print("Entrando a start_upload")  # Mensaje de depuración
-        user_id = update.effective_user.id
-        if user_id not in ADMIN_IDS:
-            await update.message.reply_text("🚫 No tienes permisos para acceder a esta función.")
-            return ConversationHandler.END
-
-        await update.callback_query.message.reply_text(
-            "📤 Por favor, sube el archivo que deseas asociar a un código.",
-            reply_markup=cancel_keyboard
-        )
-        return UPLOAD
-
-    # Manejar la subida de archivos
-    async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        print("Entrando a handle_file_upload")  # Mensaje de depuración
-
-        # Verifica si el mensaje contiene un archivo como documento o audio
-        doc = update.message.document if update.message else None
-        audio = update.message.audio if update.message else None
-
-        if not doc and not audio:
-            await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
-            return UPLOAD
-
-        # Procesa el archivo como documento o audio
-        file_id = doc.file_id if doc else audio.file_id
-        file_name = doc.file_name if doc else (audio.file_name or "archivo_sin_nombre.mp3")
-
-        # Guarda el archivo en la base de datos
-        add_file(file_name, file_id, "archivo")
-
-        # Mensaje de confirmación
-        await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
-
-        # Ofrecer opciones al usuario
-        keyboard = [
-            [InlineKeyboardButton("✅ Generar códigos", callback_data="generate_code")],
-            [InlineKeyboardButton("❌ Finalizar", callback_data="finish_upload")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        await update.message.reply_text(
-            "¿Qué deseas hacer ahora?",
-            reply_markup=reply_markup
-        )
-        return GENERATE_CODE
-
-    # Iniciar la aplicación
-    def main():
-        app = ApplicationBuilder().token(TOKEN).build()
-
-        admin_conv = ConversationHandler(
-            entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
-            states={
-                UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
-            },
-            fallbacks=[CommandHandler("cancel", cancel)],
-        )
-
-        app.add_handler(CommandHandler("start", start))
-        app.add_handler(admin_conv)
-        app.add_handler(CommandHandler("admin", admin_menu))
-
-        print("🤖 Bot corriendo...")
-        app.run_polling()
-
-    if __name__ == '__main__':
-        main()
-    from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-    from telegram.ext import (
-        ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
-    )
-    from db_functions import (
-        validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user
-    )
-    import sqlite3
-
-    # Inicialización de la base de datos
-    init_db()
-
-    # Estados de conversación
-    UPLOAD, GENERATE_CODE, ASK_CODE_QUANTITY, REDEEM = range(4)
-
-    # Configuración
-    ADMIN_IDS = [851194595]
-    TOKEN = '7987679597:AAHK4k-8kzUmDBfC9_R1cVroDqXEDqz6sB4'
-
-    cancel_keyboard = ReplyKeyboardMarkup(
-        [[KeyboardButton("❌ Cancelar")]],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
-
-    # Cancelar conversación
-    async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        keyboard = [
-            [InlineKeyboardButton("🧾 Redimir cupón", callback_data='redeem')],
-            [InlineKeyboardButton("🎵 Mis archivos", callback_data='my_files')],
-            [InlineKeyboardButton("ℹ️ Ayuda", callback_data='help')],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        # Verifica si el mensaje proviene de un chat o de un callback query
-        if update.message:
-            await update.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
-        elif update.callback_query:
-            await update.callback_query.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
-
-        return ConversationHandler.END
-
-    # Menú principal
-    async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        keyboard = [
-            [InlineKeyboardButton("🧾 Redimir cupón", callback_data='redeem')],
-            [InlineKeyboardButton("🎵 Mis archivos", callback_data='my_files')],
-            [InlineKeyboardButton("ℹ️ Ayuda", callback_data='help')],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text("¡Bienvenido! ¿Qué deseas hacer?", reply_markup=reply_markup)
-
-    # Menú de administrador
-    async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        user_id = update.effective_user.id
-        if user_id not in ADMIN_IDS:
-            await update.message.reply_text("🚫 No tienes permisos para acceder a este menú.")
-            return
-
-        keyboard = [
-            [InlineKeyboardButton("📤 Subir archivo", callback_data="upload_file")],
-            [InlineKeyboardButton("❌ Cancelar", callback_data="cancel_admin")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
-
-    # Función para iniciar la subida de archivos
-    async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        print("Entrando a start_upload")  # Mensaje de depuración
-        user_id = update.effective_user.id
-        if user_id not in ADMIN_IDS:
-            await update.message.reply_text("🚫 No tienes permisos para acceder a esta función.")
-            return ConversationHandler.END
-
-        await update.callback_query.message.reply_text(
-            "📤 Por favor, sube el archivo que deseas asociar a un código.",
-            reply_markup=cancel_keyboard
-        )
-        return UPLOAD
-
-    # Manejar la subida de archivos
-    async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        print("Entrando a handle_file_upload")  # Mensaje de depuración
-
-        # Verifica si el mensaje contiene un archivo como documento o audio
-        doc = update.message.document if update.message else None
-        audio = update.message.audio if update.message else None
-
-        if not doc and not audio:
-            await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
-            return UPLOAD
-
-        # Procesa el archivo como documento o audio
-        file_id = doc.file_id if doc else audio.file_id
-        file_name = doc.file_name if doc else (audio.file_name or "archivo_sin_nombre.mp3")
-
-        # Guarda el archivo en la base de datos
-        add_file(file_name, file_id, "archivo")
-
-        # Mensaje de confirmación
-        await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
-
-        # Ofrecer opciones al usuario
-        keyboard = [
-            [InlineKeyboardButton("✅ Generar códigos", callback_data="generate_code")],
-            [InlineKeyboardButton("❌ Finalizar", callback_data="finish_upload")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        await update.message.reply_text(
-            "¿Qué deseas hacer ahora?",
-            reply_markup=reply_markup
-        )
-        return GENERATE_CODE
-
-    # Iniciar la aplicación
-    def main():
-        app = ApplicationBuilder().token(TOKEN).build()
-
-        admin_conv = ConversationHandler(
-            entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
-            states={
-                UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
-            },
-            fallbacks=[CommandHandler("cancel", cancel)],
-        )
-
-        app.add_handler(CommandHandler("start", start))
-        app.add_handler(admin_conv)
-        app.add_handler(CommandHandler("admin", admin_menu))
-
-        print("🤖 Bot corriendo...")
-        app.run_polling()
-
-    if __name__ == '__main__':
-        main()
-    # Cancelar conversación
-    async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        keyboard = [
-            [InlineKeyboardButton("🧾 Redimir cupón", callback_data='redeem')],
-            [InlineKeyboardButton("🎵 Mis archivos", callback_data='my_files')],
-            [InlineKeyboardButton("ℹ️ Ayuda", callback_data='help')],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        # Verifica si el mensaje proviene de un chat o de un callback query
-        if update.message:
-            await update.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
-        elif update.callback_query:
-            await update.callback_query.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
-
-        return ConversationHandler.END
-        # Verifica si el mensaje proviene de un chat o de un callback query
-        if update.message:
-            await update.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
-        elif update.callback_query:
-            await update.callback_query.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
-
-        return ConversationHandler.END
-
-    # Actualización del ConversationHandler
-    def main():
-        app = ApplicationBuilder().token(TOKEN).build()
-
-        admin_conv = ConversationHandler(
-            entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
-            states={
-                UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload_and_generate_code)],
-                ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity_and_generate)],
-            },
-            fallbacks=[CommandHandler("cancel", cancel)],  # Aquí se usa la función cancel
-        )
-
-        app.add_handler(CommandHandler("start", start))
-        app.add_handler(admin_conv)
-        app.add_handler(CommandHandler("admin", admin_menu))
-
-        print("🤖 Bot corriendo...")
-        app.run_polling()
-
-    if __name__ == '__main__':
-        main()
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
 )
 from db_functions import (
     validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user
 )
-from admin_functions import handle_file_upload, handle_generate_code, handle_code_quantity
-import sqlite3
-
-# Inicialización de la base de datos
-init_db()
-
-# Estados de conversación
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import (
-    ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
-)
-from db_functions import (
-    validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user
-)
-from admin_functions import handle_file_upload, handle_generate_code, handle_code_quantity
 import sqlite3
 
 # Inicialización de la base de datos
@@ -546,7 +32,6 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    # Verifica si el mensaje proviene de un chat o de un callback query
     if update.message:
         await update.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
     elif update.callback_query:
@@ -597,470 +82,84 @@ async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Entrando a handle_file_upload")  # Mensaje de depuración
 
-    # Verifica si el mensaje contiene un archivo como documento o audio
-    doc = update.message.document if update.message else None
-    audio = update.message.audio if update.message else None
-
-    if not doc and not audio:
-        await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
-        return UPLOAD
-
-    # Procesa el archivo como documento o audio
-    file_id = doc.file_id if doc else audio.file_id
-    file_name = doc.file_name if doc else (audio.file_name or "archivo_sin_nombre.mp3")
-
-    # Guarda el archivo en la base de datos
-    add_file(file_name, file_id, "archivo")
-
-    # Mensaje de confirmación
-    await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
-
-    # Ofrecer opciones al usuario
-    keyboard = [
-        [InlineKeyboardButton("✅ Generar códigos", callback_data="generate_code")],
-        [InlineKeyboardButton("❌ Finalizar", callback_data="finish_upload")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text(
-        "¿Qué deseas hacer ahora?",
-        reply_markup=reply_markup
-    )
-    return GENERATE_CODE
-
-# Manejar la cantidad de códigos y generarlos
-async def handle_code_quantity_and_generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a handle_code_quantity_and_generate")  # Mensaje de depuración
-
-    # Obtener la cantidad ingresada por el usuario
     try:
-        quantity = int(update.message.text.strip())
-        if quantity <= 0:
-            raise ValueError("La cantidad debe ser mayor a 0.")
-    except ValueError:
-        await update.message.reply_text("❌ Por favor, ingresa un número válido mayor a 0.")
-        return ASK_CODE_QUANTITY
+        message = update.message
+        file = None
+        file_name = "archivo_sin_nombre"
 
-    # Obtener el ID del archivo desde el contexto
-    file_id = context.user_data.get('file_id')
-    if not file_id:
-        await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
-        return ConversationHandler.END
+        if message.document:
+            file = message.document
+            file_name = file.file_name or "archivo_sin_nombre"
+        elif message.audio:
+            file = message.audio
+            file_name = file.file_name or "audio_sin_nombre.mp3"
+        elif message.photo:
+            file = message.photo[-1]  # Selecciona la foto con mayor resolución
+            file_name = "imagen_sin_nombre.jpg"
+        elif message.video:
+            file = message.video
+            file_name = "video_sin_nombre.mp4"
+        elif message.voice:
+            file = message.voice
+            file_name = "nota_de_voz.ogg"
+        elif message.sticker:
+            file = message.sticker
+            file_name = "sticker_sin_nombre.webp"
 
-    # Generar los códigos y asociarlos al archivo
-    codes = add_coupon(file_id, quantity)  # Asume que esta función genera y guarda los códigos en la base de datos
-
-    # Enviar los códigos generados al usuario
-    codes_text = "\n".join(codes)
-    await update.message.reply_text(f"✅ Se generaron {quantity} códigos:\n{codes_text}")
-
-    # Finalizar el flujo
-    await update.message.reply_text("🎉 Proceso completado. ¿Necesitas algo más?", reply_markup=cancel_keyboard)
-    return ConversationHandler.END
-
-# Iniciar la aplicación
-def main():
-    app = ApplicationBuilder().token(TOKEN).build()
-
-    admin_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
-        states={
-            UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
-            GENERATE_CODE: [CallbackQueryHandler(handle_generate_code, pattern="^(generate_code|finish_upload)$")],
-            ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity_and_generate)],
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-    )
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(admin_conv)
-    app.add_handler(CommandHandler("admin", admin_menu))
-
-    print("🤖 Bot corriendo...")
-    app.run_polling()
-
-if __name__ == '__main__':
-    main()
-UPLOAD, GENERATE_CODE, ASK_CODE_QUANTITY, REDEEM = range(4)
-
-# Configuración
-ADMIN_IDS = [851194595]
-TOKEN = '7987679597:AAHK4k-8kzUmDBfC9_R1cVroDqXEDqz6sB4'
-
-cancel_keyboard = ReplyKeyboardMarkup(
-    [[KeyboardButton("❌ Cancelar")]],
-    resize_keyboard=True,
-    one_time_keyboard=True
-)
-
-# Función unificada para subir archivo y generar códigos
-async def handle_file_upload_and_generate_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a handle_file_upload_and_generate_code")  # Mensaje de depuración
-
-    # Verifica si el mensaje contiene un archivo como documento o audio
-    doc = update.message.document if update.message else None
-    audio = update.message.audio if update.message else None
-
-    if not doc and not audio:
-        await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
-        return UPLOAD
-
-    # Procesa el archivo como documento o audio
-    file_id = doc.file_id if doc else audio.file_id
-    file_name = doc.file_name if doc else (audio.file_name or "archivo_sin_nombre.mp3")
-
-    # Guarda el archivo en la base de datos
-    add_file(file_name, file_id, "archivo")
-
-    # Mensaje de confirmación
-    await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
-
-    # Solicitar la cantidad de códigos a generar
-    await update.message.reply_text(
-        "🔢 ¿Cuántos códigos deseas generar para este archivo?",
-        reply_markup=cancel_keyboard
-    )
-    # Guardar el ID del archivo en el contexto para usarlo en el siguiente paso
-    context.user_data['file_id'] = file_id
-    return ASK_CODE_QUANTITY
-
-# Manejar la cantidad de códigos y generarlos
-async def handle_code_quantity_and_generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a handle_code_quantity_and_generate")  # Mensaje de depuración
-
-    # Obtener la cantidad ingresada por el usuario
-    try:
-        quantity = int(update.message.text.strip())
-        if quantity <= 0:
-            raise ValueError("La cantidad debe ser mayor a 0.")
-    except ValueError:
-        await update.message.reply_text("❌ Por favor, ingresa un número válido mayor a 0.")
-        return ASK_CODE_QUANTITY
-
-    # Obtener el ID del archivo desde el contexto
-    file_id = context.user_data.get('file_id')
-    if not file_id:
-        await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
-        return ConversationHandler.END
-
-    # Generar los códigos y asociarlos al archivo
-    codes = add_coupon(file_id, quantity)  # Asume que esta función genera y guarda los códigos en la base de datos
-
-    # Enviar los códigos generados al usuario
-    codes_text = "\n".join(codes)
-    await update.message.reply_text(f"✅ Se generaron {quantity} códigos:\n{codes_text}")
-
-    # Finalizar el flujo
-    await update.message.reply_text("🎉 Proceso completado. ¿Necesitas algo más?", reply_markup=cancel_keyboard)
-    return ConversationHandler.END
-
-# Menú de administrador
-async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS:
-        await update.message.reply_text("🚫 No tienes permisos para acceder a este menú.")
-        return
-
-    keyboard = [
-        [InlineKeyboardButton("📤 Subir archivo", callback_data="upload_file")],
-        [InlineKeyboardButton("❌ Cancelar", callback_data="cancel_admin")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
-
-# Función para iniciar la subida de archivos
-async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a start_upload")  # Mensaje de depuración
-    user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS:
-        await update.message.reply_text("🚫 No tienes permisos para acceder a esta función.")
-        return ConversationHandler.END
-
-    await update.callback_query.message.reply_text(
-        "📤 Por favor, sube el archivo que deseas asociar a un código.",
-        reply_markup=cancel_keyboard
-    )
-    return UPLOAD
-
-# Actualización del ConversationHandler
-def main():
-    app = ApplicationBuilder().token(TOKEN).build()
-
-    admin_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
-        states={
-            UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload_and_generate_code)],
-            ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity_and_generate)],
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-    )
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(admin_conv)
-    app.add_handler(CommandHandler("admin", admin_menu))
-
-    print("🤖 Bot corriendo...")
-    app.run_polling()
-
-if __name__ == '__main__':
-    main()
-    # Función unificada para subir archivo y generar códigos
-    async def handle_file_upload_and_generate_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        print("Entrando a handle_file_upload_and_generate_code")  # Mensaje de depuración
-
-        # Verifica si el mensaje contiene un archivo como documento o audio
-        doc = update.message.document if update.message else None
-        audio = update.message.audio if update.message else None
-
-        if not doc and not audio:
+        if not file:
             await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
             return UPLOAD
 
-        # Procesa el archivo como documento o audio
-        file_id = doc.file_id if doc else audio.file_id
-        file_name = doc.file_name if doc else (audio.file_name or "archivo_sin_nombre.mp3")
+        file_id = file.file_id
+        print(f"Procesando archivo: file_id={file_id}, file_name={file_name}")  # Depuración
 
-        # Guarda el archivo en la base de datos
         add_file(file_name, file_id, "archivo")
+        context.user_data['file_id'] = file_id
+        print(f"context.user_data después de guardar file_id: {context.user_data}")  # Depuración
 
-        # Mensaje de confirmación
         await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
 
-        # Solicitar la cantidad de códigos a generar
+        keyboard = [
+            [InlineKeyboardButton("✅ Generar códigos", callback_data="generate_code")],
+            [InlineKeyboardButton("❌ Finalizar", callback_data="finish_upload")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
         await update.message.reply_text(
-            "🔢 ¿Cuántos códigos deseas generar para este archivo?",
-            reply_markup=cancel_keyboard
+            "¿Qué deseas hacer ahora?",
+            reply_markup=reply_markup
         )
-        # Guardar el ID del archivo en el contexto para usarlo en el siguiente paso
-        context.user_data['file_id'] = file_id
-        return ASK_CODE_QUANTITY
+        return GENERATE_CODE
 
-    # Manejar la cantidad de códigos y generarlos
-    async def handle_code_quantity_and_generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        print("Entrando a handle_code_quantity_and_generate")  # Mensaje de depuración
-
-        # Obtener la cantidad ingresada por el usuario
-        try:
-            quantity = int(update.message.text.strip())
-            if quantity <= 0:
-                raise ValueError("La cantidad debe ser mayor a 0.")
-        except ValueError:
-            await update.message.reply_text("❌ Por favor, ingresa un número válido mayor a 0.")
-            return ASK_CODE_QUANTITY
-
-        # Obtener el ID del archivo desde el contexto
-        file_id = context.user_data.get('file_id')
-        if not file_id:
-            await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
-            return ConversationHandler.END
-
-        # Generar los códigos y asociarlos al archivo
-        codes = add_coupon(file_id, quantity)  # Asume que esta función genera y guarda los códigos en la base de datos
-
-        # Enviar los códigos generados al usuario
-        codes_text = "\n".join(codes)
-        await update.message.reply_text(f"✅ Se generaron {quantity} códigos:\n{codes_text}")
-
-        # Finalizar el flujo
-        await update.message.reply_text("🎉 Proceso completado. ¿Necesitas algo más?", reply_markup=cancel_keyboard)
-        return ConversationHandler.END
-
-    # Actualización del ConversationHandler
-    def main():
-        app = ApplicationBuilder().token(TOKEN).build()
-
-        admin_conv = ConversationHandler(
-            entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
-            states={
-                UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload_and_generate_code)],
-                ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity_and_generate)],
-            },
-            fallbacks=[CommandHandler("cancel", cancel)],
-        )
-
-        redeem_conv = ConversationHandler(
-            entry_points=[CallbackQueryHandler(menu_handler, pattern="^(redeem|my_files|help)$")],
-            states={
-                REDEEM: [MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.Regex("^❌ Cancelar$"), redeem_coupon)],
-            },
-            fallbacks=[CommandHandler("cancel", cancel)],
-        )
-
-        app.add_handler(CommandHandler("start", start))
-        app.add_handler(admin_conv)
-        app.add_handler(redeem_conv)
-        app.add_handler(CommandHandler("admin", admin_menu))
-
-        print("🤖 Bot corriendo...")
-        app.run_polling()
-
-    if __name__ == '__main__':
-        main()
-from telegram.ext import (
-    ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
-)
-from db_functions import (
-    validate_coupon, coupon_used_by_user, register_redemption, get_file_by_id, add_coupon, add_file, init_db, get_redeemed_files_by_user
-)
-from admin_functions import handle_file_upload, handle_generate_code, handle_code_quantity
-import sqlite3
-
-# Inicialización de la base de datos
-init_db()
-
-# Estados de conversación
-UPLOAD, GENERATE_CODE, ASK_CODE_QUANTITY, REDEEM = range(4)
-
-# Configuración
-ADMIN_IDS = [851194595]
-TOKEN = '7987679597:AAHK4k-8kzUmDBfC9_R1cVroDqXEDqz6sB4'
-
-cancel_keyboard = ReplyKeyboardMarkup(
-    [[KeyboardButton("❌ Cancelar")]],
-    resize_keyboard=True,
-    one_time_keyboard=True
-)
-
-# Menú de administrador
-async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS:
-        await update.message.reply_text("🚫 No tienes permisos para acceder a este menú.")
-        return
-
-    keyboard = [
-        [InlineKeyboardButton("📤 Subir archivo", callback_data="upload_file")],
-        [InlineKeyboardButton("❌ Cancelar", callback_data="cancel_admin")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
-
-# Función para iniciar la subida de archivos
-async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a start_upload")  # Mensaje de depuración
-    user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS:
-        await update.message.reply_text("🚫 No tienes permisos para acceder a esta función.")
-        return ConversationHandler.END
-
-    await update.callback_query.message.reply_text(
-        "📤 Por favor, sube el archivo que deseas asociar a un código.",
-        reply_markup=cancel_keyboard
-    )
-    return UPLOAD
-
-async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a handle_file_upload")  # Mensaje de depuración
-
-    # Verifica si el mensaje contiene un archivo como documento o audio
-    doc = update.message.document if update.message else None
-    audio = update.message.audio if update.message else None
-
-    if not doc and not audio:
-        await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
+    except Exception as e:
+        print(f"Error al procesar el archivo: {e}")  # Log del error
+        await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
         return UPLOAD
 
-    # Procesa el archivo como documento o audio
-    file_id = doc.file_id if doc else audio.file_id
-    file_name = doc.file_name if doc else (audio.file_name or "archivo_sin_nombre.mp3")
+# Manejar la cantidad de códigos y generarlos
+async def handle_code_quantity_and_generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("Entrando a handle_code_quantity_and_generate")  # Mensaje de depuración
+    print(f"context.user_data en handle_code_quantity_and_generate: {context.user_data}")  # Depuración
 
-    # Guarda el archivo en la base de datos
-    add_file(file_name, file_id, "archivo")
+    try:
+        quantity = int(update.message.text.strip())
+        if quantity <= 0:
+            raise ValueError("La cantidad debe ser mayor a 0.")
+    except ValueError:
+        await update.message.reply_text("❌ Por favor, ingresa un número válido mayor a 0.")
+        return ASK_CODE_QUANTITY
 
-    # Mensaje de confirmación
-    await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
-
-    # Ofrecer opciones al usuario
-    keyboard = [
-        [InlineKeyboardButton("✅ Generar códigos", callback_data="generate_code")],
-        [InlineKeyboardButton("❌ Finalizar", callback_data="finish_upload")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text(
-        "¿Qué deseas hacer ahora?",
-        reply_markup=reply_markup
-    )
-    return GENERATE_CODE
-
-# Menú principal
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("🧾 Redimir cupón", callback_data='redeem')],
-        [InlineKeyboardButton("🎵 Mis archivos", callback_data='my_files')],
-        [InlineKeyboardButton("ℹ️ Ayuda", callback_data='help')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("¡Bienvenido! ¿Qué deseas hacer?", reply_markup=reply_markup)
-
-# Manejo de botones del menú
-async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    if query.data == 'redeem':
-        await query.message.reply_text("🔑 Ingresa el código de cupón:", reply_markup=cancel_keyboard)
-        return REDEEM
-    elif query.data == 'my_files':
-        await show_redeemed_files(update, context)
-        return ConversationHandler.END
-    elif query.data == 'help':
-        await query.message.reply_text("ℹ️ Usa un cupón para acceder a tus archivos.\nPresiona 'Redimir cupón' para comenzar.")
+    file_id = context.user_data.get('file_id')
+    if not file_id:
+        await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
         return ConversationHandler.END
 
-# Proceso de redención de cupón
-async def redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_input = update.message.text.strip().upper()
-    user_id = update.effective_user.id
+    codes = add_coupon(file_id, quantity)
+    codes_text = "\n".join(codes)
+    await update.message.reply_text(f"✅ Se generaron {quantity} códigos:\n{codes_text}")
 
-    file_ids = validate_coupon(user_input)
-
-    if not file_ids:
-        await update.message.reply_text("❌ Cupón inválido. Verifica el código e inténtalo de nuevo.")
-        return ConversationHandler.END
-
-    if coupon_used_by_user(user_id, user_input):
-        await update.message.reply_text("🔁 Ya redimiste este cupón. Aquí están tus archivos:")
-    else:
-        register_redemption(user_id, user_input)
-        await update.message.reply_text("✅ ¡Cupón válido! Aquí tienes tus archivos:")
-
-    for file_id in file_ids:
-        archivo = get_file_by_id(file_id)
-        if archivo:
-            name, telegram_file_id = archivo
-            await update.message.reply_document(telegram_file_id, caption=f"🎵 {name}")
-
+    await update.message.reply_text("🎉 Proceso completado. ¿Necesitas algo más?", reply_markup=cancel_keyboard)
     return ConversationHandler.END
-
-# Cancelar conversación
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("🧾 Redimir cupón", callback_data='redeem')],
-        [InlineKeyboardButton("🎵 Mis archivos", callback_data='my_files')],
-        [InlineKeyboardButton("ℹ️ Ayuda", callback_data='help')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
-    return ConversationHandler.END
-
-# Mostrar archivos redimidos
-async def show_redeemed_files(update, context, order_by="recent", page=0):
-    user_id = update.effective_user.id
-    files, total = get_redeemed_files_by_user(user_id, order_by, limit=5, offset=page * 5)
-
-    if not files:
-        await update.message.reply_text("No has redimido ningún archivo todavía.")
-        return
-
-    keyboard = [
-        [InlineKeyboardButton(f"📥 {name}", callback_data=f"getfile_{index}")]
-        for index, (name, _, _) in enumerate(files)
-    ]
-    await update.message.reply_text("📦 Archivos redimidos:", reply_markup=InlineKeyboardMarkup(keyboard))
 
 # Iniciar la aplicación
 def main():
@@ -1070,23 +169,14 @@ def main():
         entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
         states={
             UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
-            GENERATE_CODE: [CallbackQueryHandler(handle_generate_code, pattern="^(generate_code|finish_upload)$")],
-            ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity)],
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-    )
-
-    redeem_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(menu_handler, pattern="^(redeem|my_files|help)$")],
-        states={
-            REDEEM: [MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.Regex("^❌ Cancelar$"), redeem_coupon)],
+            GENERATE_CODE: [CallbackQueryHandler(handle_code_quantity_and_generate, pattern="generate_code")],
+            ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity_and_generate)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(admin_conv)
-    app.add_handler(redeem_conv)
     app.add_handler(CommandHandler("admin", admin_menu))
 
     print("🤖 Bot corriendo...")
@@ -1094,5 +184,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
