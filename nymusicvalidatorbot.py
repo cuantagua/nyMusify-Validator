@@ -119,22 +119,18 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
 
-        keyboard = [
-            [InlineKeyboardButton("✅ Generar códigos", callback_data="generate_code")],
-            [InlineKeyboardButton("❌ Finalizar", callback_data="finish_upload")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
+        # Solicitar la cantidad de códigos
         await update.message.reply_text(
-            "¿Qué deseas hacer ahora?",
-            reply_markup=reply_markup
+            "🔢 ¿Cuántos códigos deseas generar para este archivo?",
+            reply_markup=cancel_keyboard
         )
-        return GENERATE_CODE
+        return ASK_CODE_QUANTITY
 
     except Exception as e:
         print(f"Error al procesar el archivo: {e}")  # Log del error
         await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
         return UPLOAD
+
 
 # Manejar la cantidad de códigos y generarlos
 async def handle_code_quantity_and_generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -142,9 +138,8 @@ async def handle_code_quantity_and_generate(update: Update, context: ContextType
     print(f"context.user_data en handle_code_quantity_and_generate: {context.user_data}")  # Depuración
 
     # Verificar que update.message no sea None
-    if not update.message:
-        print("❌ No se recibió un mensaje válido. Probablemente se recibió un callback query.")
-        await update.callback_query.answer("Por favor, ingresa un número válido.")
+    if not update.message or not update.message.text:
+        await update.message.reply_text("❌ Por favor, ingresa un número válido.")
         return ASK_CODE_QUANTITY
 
     try:
@@ -171,6 +166,7 @@ async def handle_code_quantity_and_generate(update: Update, context: ContextType
     await update.message.reply_text("🎉 Proceso completado. ¿Necesitas algo más?", reply_markup=cancel_keyboard)
     return ConversationHandler.END
 
+
 # Iniciar la aplicación
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
@@ -179,7 +175,6 @@ def main():
         entry_points=[CallbackQueryHandler(start_upload, pattern="^upload_file$")],
         states={
             UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
-            GENERATE_CODE: [CallbackQueryHandler(handle_code_quantity_and_generate, pattern="generate_code")],
             ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity_and_generate)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
