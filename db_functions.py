@@ -77,12 +77,11 @@ def add_file(name, telegram_file_id, tipo):
     conn.commit()
     conn.close()
 
-# Ejemplo de definición de add_coupon en db_functions
 def add_coupon(file_id, quantity):
     # Lógica para generar 'quantity' códigos asociados a 'file_id'
     codes = []
     for _ in range(quantity):
-        code = generate_unique_code()  # Suponiendo que existe una función para generar códigos únicos
+        code = generate_code()  # Usar la función existente para generar códigos
         save_code_to_db(file_id, code)  # Suponiendo que existe una función para guardar el código en la base de datos
         codes.append(code)
     return codes
@@ -202,3 +201,17 @@ def generate_coupons_csv(file_name, cantidad):
 
     conn.close()
     return csv_path
+
+def save_code_to_db(file_id, code):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    # Insertar el código en la tabla de cupones
+    cursor.execute("INSERT OR IGNORE INTO coupons (code) VALUES (?)", (code,))
+    conn.commit()
+
+    # Asociar el código al archivo
+    cursor.execute("INSERT INTO coupon_files (coupon_code, file_id) VALUES (?, ?)", (code, file_id))
+    conn.commit()
+
+    conn.close()
