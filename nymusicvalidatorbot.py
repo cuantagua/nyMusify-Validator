@@ -18,6 +18,68 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return ConversationHandler.END
 
+    # Manejar la subida de archivos
+    async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        print("Entrando a handle_file_upload")  # Mensaje de depuración
+
+        try:
+            # Verifica si el mensaje contiene algún tipo de archivo
+            message = update.message
+            file = None
+            file_name = "archivo_sin_nombre"
+
+            if message.document:
+                file = message.document
+                file_name = file.file_name or "archivo_sin_nombre"
+            elif message.audio:
+                file = message.audio
+                file_name = file.file_name or "audio_sin_nombre.mp3"
+            elif message.photo:
+                file = message.photo[-1]  # Selecciona la foto con mayor resolución
+                file_name = "imagen_sin_nombre.jpg"
+            elif message.video:
+                file = message.video
+                file_name = "video_sin_nombre.mp4"
+            elif message.voice:
+                file = message.voice
+                file_name = "nota_de_voz.ogg"
+            elif message.sticker:
+                file = message.sticker
+                file_name = "sticker_sin_nombre.webp"
+
+            # Si no se detecta ningún archivo, muestra un mensaje de error
+            if not file:
+                await update.message.reply_text("❌ No se recibió un archivo válido. Por favor, intenta nuevamente.")
+                return UPLOAD
+
+            # Obtiene el file_id para descargar el archivo más tarde
+            file_id = file.file_id
+            print(f"Procesando archivo: file_id={file_id}, file_name={file_name}")  # Depuración
+
+            # Guarda el archivo en la base de datos
+            add_file(file_name, file_id, "archivo")
+            print("Archivo guardado en la base de datos correctamente.")  # Depuración
+
+            # Mensaje de confirmación
+            await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
+
+            # Ofrecer opciones al usuario
+            keyboard = [
+                [InlineKeyboardButton("✅ Generar códigos", callback_data="generate_code")],
+                [InlineKeyboardButton("❌ Finalizar", callback_data="finish_upload")],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.message.reply_text(
+                "¿Qué deseas hacer ahora?",
+                reply_markup=reply_markup
+            )
+            return GENERATE_CODE
+
+        except Exception as e:
+            print(f"Error al procesar el archivo: {e}")  # Log del error
+            await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
+            return UPLOAD
     from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
     from telegram.ext import (
         ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters, ConversationHandler
