@@ -143,11 +143,8 @@ async def handle_code_quantity_and_generate(update: Update, context: ContextType
 
     # Verificar que update.message no sea None
     if not update.message:
-        if update.callback_query:
-            await update.callback_query.answer()
-            await update.callback_query.message.reply_text("❌ No se recibió un mensaje válido. Por favor, ingresa un número.")
-        else:
-            print("❌ No se pudo procesar la actualización: no es un mensaje ni un callback query.")
+        print("❌ No se recibió un mensaje válido. Probablemente se recibió un callback query.")
+        await update.callback_query.answer("Por favor, ingresa un número válido.")
         return ASK_CODE_QUANTITY
 
     try:
