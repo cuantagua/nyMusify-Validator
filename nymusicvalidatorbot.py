@@ -26,14 +26,25 @@ cancel_keyboard = ReplyKeyboardMarkup(
     one_time_keyboard=True
 )
 
+def generate_menu(is_admin=False):
+    if is_admin:
+        # Menú para administradores
+        keyboard = [
+            [InlineKeyboardButton("📤 Subir archivo", callback_data="upload_file")],
+            [InlineKeyboardButton("❌ Cancelar", callback_data="cancel_admin")],
+        ]
+    else:
+        # Menú para usuarios regulares
+        keyboard = [
+            [InlineKeyboardButton("🧾 Redimir cupón", callback_data="redeem")],
+            [InlineKeyboardButton("🎵 Mis archivos", callback_data="my_files")],
+            [InlineKeyboardButton("ℹ️ Ayuda", callback_data="help")],
+        ]
+    return InlineKeyboardMarkup(keyboard)
+
 # Cancelar la conversación
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("🧾 Redimir cupón", callback_data='redeem')],
-        [InlineKeyboardButton("🎵 Mis archivos", callback_data='my_files')],
-        [InlineKeyboardButton("ℹ️ Ayuda", callback_data='help')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = generate_menu(is_admin=False)
 
     if update.message:
         await update.message.reply_text("❌ Operación cancelada.", reply_markup=reply_markup)
@@ -44,29 +55,13 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Mostrar el menú principal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("🧾 Redimir cupón", callback_data='redeem')],
-        [InlineKeyboardButton("🎵 Mis archivos", callback_data='my_files')],
-        [InlineKeyboardButton("ℹ️ Ayuda", callback_data='help')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
     user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS:
-        if update.message:
-            await update.message.reply_text("🚫 No tienes permisos para acceder a este menú.")
-        return
-    user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS:
-        await update.message.reply_text("🚫 No tienes permisos para acceder a este menú.")
-        return
+    is_admin = user_id in ADMIN_IDS
 
-    keyboard = [
-        [InlineKeyboardButton("📤 Subir archivo", callback_data="upload_file")],
-        [InlineKeyboardButton("❌ Cancelar", callback_data="cancel_admin")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
+    if is_admin:
+        await update.message.reply_text("🛠 Menú de administrador:", reply_markup=generate_menu(is_admin=True))
+    else:
+        await update.message.reply_text("¡Bienvenido! ¿Qué deseas hacer?", reply_markup=generate_menu(is_admin=False))
 
 # Iniciar el proceso de subida de archivos
 async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -266,13 +261,7 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🚫 No tienes permisos para acceder al menú de administrador.")
         return
 
-    keyboard = [
-        [InlineKeyboardButton("📤 Subir archivo", callback_data="upload_file")],
-        [InlineKeyboardButton("❌ Cancelar", callback_data="cancel_admin")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
+    await update.message.reply_text("🛠 Menú de administrador:", reply_markup=generate_menu(is_admin=True))
 
 # Iniciar la aplicación del bot
 def main():
