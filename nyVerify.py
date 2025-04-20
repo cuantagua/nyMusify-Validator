@@ -14,11 +14,11 @@ def generar_codigo():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
 # Comando /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE = None):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🤖 ¡Hola! Soy el bot de gestión de cupones. 📤 Usa /subir_archivo para comenzar.")
 
 # Subir archivo (solo admin)
-async def subir_archivo(update: Update, context: ContextTypes.DEFAULT_TYPE = None):
+async def subir_archivo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.document:
         archivo = update.message.document
         archivo_id = archivo.file_id
@@ -96,7 +96,10 @@ async def main():
 
     # Iniciar el bot
     print("Bot iniciado. Presiona Ctrl+C para detenerlo.")
-    await application.run_polling()
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling()
+    await application.stop()
 
 if __name__ == "__main__":
     import asyncio
