@@ -90,6 +90,9 @@ async def main():
     # Reemplaza 'YOUR_TOKEN_HERE' con el token de tu bot
     application = Application.builder().token('7987679597:AAHK4k-8kzUmDBfC9_R1cVroDqXEDqz6sB4').build()
 
+    # Inicializar la aplicación
+    await application.initialize()
+
     # Registrar comandos
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("subir_archivo", subir_archivo))
