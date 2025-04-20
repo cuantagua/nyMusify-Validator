@@ -168,11 +168,15 @@ async def handle_code_quantity_and_generate(update: Update, context: ContextType
 
 # Manejar el ingreso del código del cupón
 async def handle_redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("Entrando a handle_redeem_coupon")  # Depuración
+
     user_input = update.message.text.strip().upper()
     user_id = update.effective_user.id
+    print(f"Cupón ingresado: {user_input}, Usuario: {user_id}")  # Depuración
 
     # Validar el cupón
     file_ids = validate_coupon(user_input)
+    print(f"Archivos asociados al cupón: {file_ids}")  # Depuración
 
     if not file_ids:
         await update.message.reply_text("❌ Cupón inválido. Verifica el código e inténtalo de nuevo.")
@@ -189,6 +193,7 @@ async def handle_redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
         archivo = get_file_by_id(file_id)
         if archivo:
             name, telegram_file_id = archivo
+            print(f"Enviando archivo: {name}, file_id: {telegram_file_id}")  # Depuración
             await update.message.reply_document(telegram_file_id, caption=f"🎵 {name}")
 
     return ConversationHandler.END
@@ -211,6 +216,7 @@ def main():
         states={
             UPLOAD: [MessageHandler(filters.ATTACHMENT, handle_file_upload)],
             ASK_CODE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_code_quantity_and_generate)],
+            REDEEM: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_redeem_coupon)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
