@@ -155,6 +155,7 @@ async def handle_code_quantity_and_generate(update: Update, context: ContextType
 async def handle_redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Entrando a handle_redeem_coupon")  # Depuración
 
+    # Obtén el texto ingresado por el usuario
     user_input = update.message.text.strip().upper()
     user_id = update.effective_user.id
     print(f"Cupón ingresado: {user_input}, Usuario: {user_id}")  # Depuración
@@ -167,9 +168,11 @@ async def handle_redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.message.reply_text("❌ Cupón inválido. Verifica el código e inténtalo de nuevo.")
         return REDEEM
 
+    # Verifica si el cupón ya fue redimido por el usuario
     if coupon_used_by_user(user_id, user_input):
         await update.message.reply_text("🔁 Ya redimiste este cupón. Aquí están tus archivos:")
     else:
+        # Registra la redención del cupón
         register_redemption(user_id, user_input)
         await update.message.reply_text("✅ ¡Cupón válido! Aquí tienes tus archivos:")
 

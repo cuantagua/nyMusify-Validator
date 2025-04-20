@@ -86,47 +86,37 @@ def add_coupon(file_id, quantity):
         codes.append(code)
     return codes
 
-def validate_coupon(code: str):
-    conn = sqlite3.connect(DB_NAME)
+def validate_coupon(coupon):
+    conn = sqlite3.connect('bot_store.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT file_id FROM coupon_files WHERE coupon_code = ?", (code,))
-    rows = cursor.fetchall()
+    cursor.execute("SELECT file_id FROM coupons WHERE code = ? AND redeemed = 0", (coupon,))
+    result = cursor.fetchall()
     conn.close()
+    return [row[0] for row in result]
 
-    if rows:
-        return [row[0] for row in rows]
-    else:
-        return None
-
-def coupon_used_by_user(user_id, code):
-    conn = sqlite3.connect(DB_NAME)
+def coupon_used_by_user(user_id, coupon):
+    conn = sqlite3.connect('bot_store.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM redemptions WHERE user_id = ? AND coupon_code = ?", (user_id, code))
+    cursor.execute("SELECT 1 FROM redemptions WHERE user_id = ? AND coupon = ?", (user_id, coupon))
     result = cursor.fetchone()
     conn.close()
     return result is not None
 
-def register_redemption(user_id, code):
-    conn = sqlite3.connect(DB_NAME)
+def register_redemption(user_id, coupon):
+    conn = sqlite3.connect('bot_store.db')
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO redemptions (user_id, coupon_code) VALUES (?, ?)", (user_id, code))
-
-    # Registrar archivos desbloqueados
-    cursor.execute("SELECT file_id FROM coupon_files WHERE coupon_code = ?", (code,))
-    file_ids = cursor.fetchall()
-    for (file_id,) in file_ids:
-        cursor.execute("INSERT INTO user_files (user_id, file_id) VALUES (?, ?)", (user_id, file_id))
-
+    cursor.execute("INSERT INTO redemptions (user_id, coupon) VALUES (?, ?)", (user_id, coupon))
+    cursor.execute("UPDATE coupons SET redeemed = 1 WHERE code = ?", (coupon,))
     conn.commit()
     conn.close()
 
 def get_file_by_id(file_id):
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect('bot_store.db')
     cursor = conn.cursor()
     cursor.execute("SELECT name, telegram_file_id FROM files WHERE id = ?", (file_id,))
     result = cursor.fetchone()
     conn.close()
-    return result if result else (None, None)
+    return result
 
 def associate_file_with_coupon(coupon_code, file_id):
     conn = sqlite3.connect(DB_NAME)
