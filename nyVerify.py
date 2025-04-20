@@ -14,11 +14,11 @@ def generar_codigo():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
 # Comando /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE = None):
     await update.message.reply_text("🤖 ¡Hola! Soy el bot de gestión de cupones. 📤 Usa /subir_archivo para comenzar.")
 
 # Subir archivo (solo admin)
-async def subir_archivo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def subir_archivo(update: Update, context: ContextTypes.DEFAULT_TYPE = None):
     if update.message.document:
         archivo = update.message.document
         archivo_id = archivo.file_id
@@ -100,4 +100,10 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except RuntimeError as e:
+        if str(e) == "This event loop is already running":
+            import nest_asyncio
+            nest_asyncio.apply()
+            asyncio.run(main())
