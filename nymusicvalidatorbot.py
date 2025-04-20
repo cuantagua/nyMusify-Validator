@@ -66,7 +66,6 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Función para iniciar la subida de archivos
 async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a start_upload")  # Mensaje de depuración
     user_id = update.effective_user.id
     if user_id not in ADMIN_IDS:
         await update.message.reply_text("🚫 No tienes permisos para acceder a esta función.")
@@ -80,8 +79,6 @@ async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Manejar la subida de archivos
 async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a handle_file_upload")  # Mensaje de depuración
-
     try:
         message = update.message
         file = None
@@ -111,11 +108,9 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
             return UPLOAD
 
         file_id = file.file_id
-        print(f"Procesando archivo: file_id={file_id}, file_name={file_name}")  # Depuración
 
         add_file(file_name, file_id, "archivo")
         context.user_data['file_id'] = file_id
-        print(f"context.user_data después de guardar file_id: {context.user_data}")  # Depuración
 
         await update.message.reply_text(f"✅ Archivo '{file_name}' guardado con éxito.")
 
@@ -126,24 +121,17 @@ async def handle_file_upload(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         return ASK_CODE_QUANTITY
 
-    except Exception as e:
-        print(f"Error al procesar el archivo: {e}")  # Log del error
+    except Exception:
         await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
         return UPLOAD
 
-
 # Manejar la cantidad de códigos y generarlos
 async def handle_code_quantity_and_generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a handle_code_quantity_and_generate")  # Mensaje de depuración
-    print(f"context.user_data en handle_code_quantity_and_generate: {context.user_data}")  # Depuración
-
-    # Verificar que update.message no sea None
     if not update.message or not update.message.text:
         await update.message.reply_text("❌ Por favor, ingresa un número válido.")
         return ASK_CODE_QUANTITY
 
     try:
-        # Obtener la cantidad ingresada por el usuario
         quantity = int(update.message.text.strip())
         if quantity <= 0:
             raise ValueError("La cantidad debe ser mayor a 0.")
@@ -151,32 +139,24 @@ async def handle_code_quantity_and_generate(update: Update, context: ContextType
         await update.message.reply_text("❌ Por favor, ingresa un número válido mayor a 0.")
         return ASK_CODE_QUANTITY
 
-    # Obtener el ID del archivo desde el contexto
     file_id = context.user_data.get('file_id')
     if not file_id:
         await update.message.reply_text("❌ Ocurrió un error al procesar el archivo. Por favor, intenta nuevamente.")
         return ConversationHandler.END
 
-    # Generar los códigos y asociarlos al archivo
     codes = add_coupon(file_id, quantity)
     codes_text = "\n".join(codes)
     await update.message.reply_text(f"✅ Se generaron {quantity} códigos:\n{codes_text}")
 
-    # Finalizar el flujo
     await update.message.reply_text("🎉 Proceso completado. ¿Necesitas algo más?", reply_markup=cancel_keyboard)
     return ConversationHandler.END
 
 # Manejar el ingreso del código del cupón
 async def handle_redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Entrando a handle_redeem_coupon")  # Depuración
-
     user_input = update.message.text.strip().upper()
     user_id = update.effective_user.id
-    print(f"Cupón ingresado: {user_input}, Usuario: {user_id}")  # Depuración
 
-    # Validar el cupón
     file_ids = validate_coupon(user_input)
-    print(f"Archivos asociados al cupón: {file_ids}")  # Depuración
 
     if not file_ids:
         await update.message.reply_text("❌ Cupón inválido. Verifica el código e inténtalo de nuevo.")
@@ -188,12 +168,10 @@ async def handle_redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
         register_redemption(user_id, user_input)
         await update.message.reply_text("✅ ¡Cupón válido! Aquí tienes tus archivos:")
 
-    # Enviar los archivos asociados al cupón
     for file_id in file_ids:
         archivo = get_file_by_id(file_id)
         if archivo:
             name, telegram_file_id = archivo
-            print(f"Enviando archivo: {name}, file_id: {telegram_file_id}")  # Depuración
             await update.message.reply_document(telegram_file_id, caption=f"🎵 {name}")
 
     return ConversationHandler.END
