@@ -90,6 +90,9 @@ async def main():
     # Reemplaza 'YOUR_TOKEN_HERE' con el token de tu bot
     application = Application.builder().token('7987679597:AAHK4k-8kzUmDBfC9_R1cVroDqXEDqz6sB4').build()
 
+    # Inicializar la aplicación
+    await application.initialize()
+
     # Registrar comandos
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("subir_archivo", subir_archivo))
@@ -100,6 +103,7 @@ async def main():
     print("Bot iniciado. Presiona Ctrl+C para detenerlo.")
     await application.start()
     await application.updater.start_polling()
+    await application.stop()  # Detener el bot correctamente al finalizar
 
 # Ejecutar el bot en Google Colab
 if __name__ == "__main__":
