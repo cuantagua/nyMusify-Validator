@@ -56,12 +56,13 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Mostrar el menú principal
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    is_admin = user_id in ADMIN_IDS
+    is_admin = user_id in ADMIN_IDS  # Verifica si el usuario es administrador
 
-    if is_admin:
-        await update.message.reply_text("🛠 Menú de administrador:", reply_markup=generate_menu(is_admin=True))
-    else:
-        await update.message.reply_text("¡Bienvenido! ¿Qué deseas hacer?", reply_markup=generate_menu(is_admin=False))
+    # Mostrar el menú correspondiente
+    await update.message.reply_text(
+        "¡Bienvenido! ¿Qué deseas hacer?",
+        reply_markup=generate_menu(is_admin=is_admin)
+    )
 
 # Iniciar el proceso de subida de archivos
 async def start_upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -261,7 +262,11 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🚫 No tienes permisos para acceder al menú de administrador.")
         return
 
-    await update.message.reply_text("🛠 Menú de administrador:", reply_markup=generate_menu(is_admin=True))
+    # Mostrar el menú de administrador
+    await update.message.reply_text(
+        "🛠 Menú de administrador:",
+        reply_markup=generate_menu(is_admin=True)
+    )
 
 # Iniciar la aplicación del bot
 def main():
