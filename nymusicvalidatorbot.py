@@ -153,10 +153,15 @@ async def handle_code_quantity_and_generate(update: Update, context: ContextType
 
 # Manejar el ingreso del código del cupón
 async def handle_redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("Entrando a handle_redeem_coupon")  # Depuración
+
     user_input = update.message.text.strip().upper()
     user_id = update.effective_user.id
+    print(f"Cupón ingresado: {user_input}, Usuario: {user_id}")  # Depuración
 
+    # Validar el cupón
     file_ids = validate_coupon(user_input)
+    print(f"Archivos asociados al cupón: {file_ids}")  # Depuración
 
     if not file_ids:
         await update.message.reply_text("❌ Cupón inválido. Verifica el código e inténtalo de nuevo.")
@@ -168,10 +173,12 @@ async def handle_redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
         register_redemption(user_id, user_input)
         await update.message.reply_text("✅ ¡Cupón válido! Aquí tienes tus archivos:")
 
+    # Enviar los archivos asociados al cupón
     for file_id in file_ids:
         archivo = get_file_by_id(file_id)
         if archivo:
             name, telegram_file_id = archivo
+            print(f"Enviando archivo: {name}, file_id: {telegram_file_id}")  # Depuración
             await update.message.reply_document(telegram_file_id, caption=f"🎵 {name}")
 
     return ConversationHandler.END
