@@ -208,7 +208,12 @@ async def handle_redeem_coupon(update: Update, context: ContextTypes.DEFAULT_TYP
 async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    if query.data == 'my_files':
+
+    if query.data == 'upload_file':
+        await start_upload(update, context)
+    elif query.data == 'cancel_admin':
+        await query.message.reply_text("❌ Operación cancelada.")
+    elif query.data == 'my_files':
         user_id = query.from_user.id
         # Recuperar los archivos redimidos por el usuario
         redeemed_files = get_redeemed_files_by_user(user_id)
@@ -253,6 +258,21 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
         print(f"⚠️ Error de Telegram detectado: {e}")
     except Exception as e:
         print(f"⚠️ Error inesperado: {e}")
+
+# Menú de administrador
+async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id not in ADMIN_IDS:
+        await update.message.reply_text("🚫 No tienes permisos para acceder al menú de administrador.")
+        return
+
+    keyboard = [
+        [InlineKeyboardButton("📤 Subir archivo", callback_data="upload_file")],
+        [InlineKeyboardButton("❌ Cancelar", callback_data="cancel_admin")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text("🛠 Menú de administrador:", reply_markup=reply_markup)
 
 # Iniciar la aplicación del bot
 def main():
