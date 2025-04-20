@@ -86,7 +86,7 @@ def redimir(update: Update, context: CallbackContext):
 # Configuración del bot
 def main():
     # Reemplaza 'YOUR_TOKEN_HERE' con el token de tu bot
-    updater = Updater("7987679597:AAHK4k-8kzUmDBfC9_R1cVroDqXEDqz6sB4", use_context=True)
+    updater = Updater('7987679597:AAHK4k-8kzUmDBfC9_R1cVroDqXEDqz6sB4', use_context=True)
     dispatcher = updater.dispatcher
 
     # Registrar comandos
