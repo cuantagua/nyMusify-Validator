@@ -128,37 +128,19 @@ def associate_file_with_coupon(coupon_code, file_id):
     conn.commit()
     conn.close()
 
-def get_redeemed_files_by_user(user_id, order_by="recent", limit=5, offset=0):
-    conn = sqlite3.connect(DB_NAME)
+def get_redeemed_files_by_user(user_id):
+    conn = sqlite3.connect('bot_store.db')
     cursor = conn.cursor()
-
-    order_clause = "uf.redeemed_at DESC"
-    if order_by == "name":
-        order_clause = "f.name ASC"
-
-    cursor.execute(f"""
-        SELECT f.name, f.telegram_file_id, f.tipo, uf.redeemed_at
-        FROM user_files uf
-        JOIN files f ON uf.file_id = f.id
-        WHERE uf.user_id = ?
-        GROUP BY f.id
-        ORDER BY {order_clause}
-        LIMIT ? OFFSET ?
-    """, (user_id, limit, offset))
-
-    files = cursor.fetchall()
-
-    # Para contar total
     cursor.execute("""
-        SELECT COUNT(DISTINCT f.id)
-        FROM user_files uf
-        JOIN files f ON uf.file_id = f.id
-        WHERE uf.user_id = ?
+        SELECT f.name, f.telegram_file_id
+        FROM redemptions r
+        JOIN coupons c ON r.coupon = c.code
+        JOIN files f ON c.file_id = f.id
+        WHERE r.user_id = ?
     """, (user_id,))
-    total = cursor.fetchone()[0]
-
+    result = cursor.fetchall()
     conn.close()
-    return files, total
+    return result
 
 def generate_code():
     return f"{''.join(random.choices(string.ascii_uppercase + string.digits, k=3))}-" \

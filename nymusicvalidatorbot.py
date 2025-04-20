@@ -195,7 +195,17 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text("🔑 Ingresa el código de cupón:", reply_markup=cancel_keyboard)
         return REDEEM
     elif query.data == 'my_file':
-         await query.message.reply_text("🎵 Aquí están tus archivos redimidos.")  # Aquí puedes agregar lógica para mostrar los archivos redimidos
+        user_id = query.from_user.id
+        # Recuperar los archivos redimidos por el usuario
+        redeemed_files = get_redeemed_files_by_user(user_id)
+
+        if not redeemed_files:
+            await query.message.reply_text("❌ No tienes archivos redimidos.")
+        else:
+            await query.message.reply_text("🎵 Aquí están tus archivos redimidos:")
+            for file in redeemed_files:
+                name, telegram_file_id = file
+                await query.message.reply_document(telegram_file_id, caption=f"🎵 {name}")
     elif query.data == 'help':
         await query.message.reply_text("ℹ️ Este es un bot para redimir cupones y descargar archivos.")
 
