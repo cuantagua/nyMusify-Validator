@@ -191,6 +191,10 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data == 'redeem':
         await query.message.reply_text("🔑 Ingresa el código de cupón:", reply_markup=cancel_keyboard)
         return REDEEM
+    elif query.data == 'my_file':
+         await query.message.reply_text("🎵 Aquí están tus archivos redimidos.")  # Aquí puedes agregar lógica para mostrar los archivos redimidos
+    elif query.data == 'help':
+        await query.message.reply_text("ℹ️ Este es un bot para redimir cupones y descargar archivos.")
 
 # Iniciar la aplicación
 def main():
@@ -208,6 +212,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(admin_conv)
+    app.add_handler(CallbackQueryHandler(menu_handler)) 
     app.add_handler(CommandHandler("admin", admin_menu))
 
     print("🤖 Bot corriendo...")
