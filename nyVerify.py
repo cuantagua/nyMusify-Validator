@@ -15,7 +15,7 @@ def generar_codigo():
 
 # Comando /start
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("¡Hola! 🤖 Soy el bot de gestión de cupones. Usa /subir_archivo 📤 para comenzar.")
+    update.message.reply_text("🤖 ¡Hola! Soy el bot de gestión de cupones. 📤 Usa /subir_archivo para comenzar.")
 
 # Subir archivo (solo admin)
 def subir_archivo(update: Update, context: CallbackContext):
@@ -27,19 +27,19 @@ def subir_archivo(update: Update, context: CallbackContext):
             "fecha_subida": datetime.now(),
             "cupones": []
         }
-        update.message.reply_text(f"Archivo '{archivo.file_name}' subido correctamente. ✅")
+        update.message.reply_text(f"✅ Archivo '{archivo.file_name}' subido correctamente.")
     else:
-        update.message.reply_text("Por favor, envía un archivo válido. ❌")
+        update.message.reply_text("❌ Por favor, envía un archivo válido.")
 
 # Generar cupones (solo admin)
 def generar_cupones(update: Update, context: CallbackContext):
     if len(context.args) != 1 or not context.args[0].isdigit():
-        update.message.reply_text("Uso: /generar_cupones <cantidad> ⚙️")
+        update.message.reply_text("⚙️ Uso: /generar_cupones <cantidad>")
         return
 
     cantidad = int(context.args[0])
     if not archivos:
-        update.message.reply_text("No hay archivos disponibles para generar cupones. 📂❌")
+        update.message.reply_text("📂❌ No hay archivos disponibles para generar cupones.")
         return
 
     ultimo_archivo_id = list(archivos.keys())[-1]
@@ -61,16 +61,16 @@ def generar_cupones(update: Update, context: CallbackContext):
 # Redimir cupón
 def redimir(update: Update, context: CallbackContext):
     if len(context.args) != 1:
-        update.message.reply_text("Uso: /redimir <código> 🎟️")
+        update.message.reply_text("🎟️ Uso: /redimir <código>")
         return
 
     codigo = context.args[0]
     if codigo not in cupones:
-        update.message.reply_text("El código ingresado no es válido. ❌")
+        update.message.reply_text("❌ El código ingresado no es válido.")
         return
 
     if cupones[codigo]["estado"] == "Redimido":
-        update.message.reply_text("Este cupón ya ha sido redimido. 🔁")
+        update.message.reply_text("🔁 Este cupón ya ha sido redimido.")
         return
 
     cupones[codigo]["estado"] = "Redimido"
@@ -81,12 +81,12 @@ def redimir(update: Update, context: CallbackContext):
         usuarios[update.message.from_user.id] = {"archivos_redimidos": []}
     usuarios[update.message.from_user.id]["archivos_redimidos"].append(archivo_id)
 
-    update.message.reply_text(f"✅ Cupón redimido. Ahora tienes acceso al archivo '{archivos[archivo_id]['nombre']}'. 📂")
+    update.message.reply_text(f"✅ Cupón redimido. 📂 Ahora tienes acceso al archivo '{archivos[archivo_id]['nombre']}'.")
 
 # Configuración del bot
 def main():
     # Reemplaza 'YOUR_TOKEN_HERE' con el token de tu bot
-    updater = Updater("YOUR_TOKEN_HERE", use_context=True)
+    updater = Updater("7987679597:AAHK4k-8kzUmDBfC9_R1cVroDqXEDqz6sB4", use_context=True)
     dispatcher = updater.dispatcher
 
     # Registrar comandos
