@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
+import nest_asyncio
+import asyncio
 
 # Variables globales
 archivos = {}
@@ -96,17 +98,10 @@ async def main():
 
     # Iniciar el bot
     print("Bot iniciado. Presiona Ctrl+C para detenerlo.")
-    await application.initialize()
     await application.start()
     await application.updater.start_polling()
-    await application.stop()
 
+# Ejecutar el bot en Google Colab
 if __name__ == "__main__":
-    import asyncio
-    try:
-        asyncio.run(main())
-    except RuntimeError as e:
-        if str(e) == "This event loop is already running":
-            import nest_asyncio
-            nest_asyncio.apply()
-            asyncio.run(main())
+    nest_asyncio.apply()  # Permitir múltiples bucles de eventos
+    asyncio.run(main())
